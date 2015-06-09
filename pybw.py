@@ -302,9 +302,11 @@ class ConsoleManagerThreaded(object):
 consoleManager = ConsoleManagerThreaded()
 event_handler.listeners.append( consoleManager )
 
+#import KaisevenOptimizeSC as k7opt
 try:
     import kai7ai
     event_handler.listeners.append( kai7ai.zerg_FastBreakAI() )
+    #event_handler.listeners.append( kai7ai.TestAI() )
     #import erezai.main
     #event_handler.listeners.append( erezai.main.ErezAI() )
     #import cannonai
