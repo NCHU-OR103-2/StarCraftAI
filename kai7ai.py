@@ -24,6 +24,7 @@ class zerg_FastBreakAI(object):
         #self.me = self.game.self
         #self.race = self.me.race
         set_basic_information(self, self.game)
+        self.MOVE_COEF = 3
         #self.enemy = self.game.getPlayer(1)    # semantics error
         self.enemys = []
         players = self.game.getPlayers()
@@ -104,12 +105,12 @@ class zerg_FastBreakAI(object):
         if self.StrategyStep == 2 and self.me.minerals >= 50:
             self.Hatchery.train(Zerg_Zergling)
 
-        draw_box_on(self.game, self.Hatchery)
+        #draw_box_on(self.game, self.Hatchery)
 
         clear_up_death_unit(self.drawUnits, is_tuple=True)
         if len(self.drawUnits) > 0:
             for drawing in self.drawUnits:
-                r = int(math.ceil(fire_range_of(drawing[0], move_coef = 2)))
+                r = int(math.ceil(fire_range_of(drawing[0], move_coef = self.MOVE_COEF)))
                 draw_circle_on(self.game, drawing[0], radius = r, colornum = drawing[2])
 
         clear_up_death_unit(self.army)       
@@ -117,7 +118,9 @@ class zerg_FastBreakAI(object):
             enemys = get_neighboring_enemys(self.game, self.army, self.enemy)
             if self.game.frameCount % 10 == 0:    
                 self.game.printf('I catch ' + str(len(enemys)) + ' neighboring enemys .')
-
+            target_list = quick_wta(self.army, enemys, move_coef = self.MOVE_COEF)
+            start_attack(self.army, target_list, draw_line_game = self.game)
+        
     def onUnitCreate(self, unit):
         if unit.type.isWorker:
             #self.game.printf('creat a worker.')
@@ -127,7 +130,7 @@ class zerg_FastBreakAI(object):
         if unit.type.name == "Zerg Zergling":
             #self.game.printf('creat a zergling')
             unit.attack(self.enemy_position)
-            self.drawUnits.append((unit, 16, 117))
+            self.drawUnits.append((unit, 16, COLOR_YELLOW))
             self.army.append(unit)
             
     def onUnitMorph(self, unit):
@@ -139,7 +142,7 @@ class zerg_FastBreakAI(object):
             #self.game.printf('morph a Zergling.')
             attack_time = self.game.frameCount + self.wait_frame
             self.inactive_zerglings.append(( attack_time, unit ))
-            self.drawUnits.append((unit, 16, 111))
+            self.drawUnits.append((unit, 16, COLOR_YELLOW))
             self.army.append(unit)
     
     def minning(self, worker):        
@@ -167,7 +170,7 @@ class zerg_FastBreakAI(object):
                 break
         self.StrategyStep = 1
 
-
+###############################################################################################
 
 class TestAI(object):
     def __init__(self):
@@ -246,16 +249,10 @@ class TestAI(object):
         
         if self.me.minerals >= 50:
             self.Hatchery.train(Zerg_Zergling)
-        colG = Color(6)
-        Top = self.Hatchery.top
-        Bot = self.Hatchery.bottom
-        Lef = self.Hatchery.left
-        Rig = self.Hatchery.right
-        self.game.drawBoxMap(Lef, Top, Rig, Bot, colG)
 
         if len(self.drawUnits) > 0:
             for drawing in self.drawUnits:
-                r = int(math.ceil(fire_range_of(drawing[0], move_coef = 2)))
+                r = int(math.ceil(fire_range_of(drawing[0], move_coef = 3)))
                 #self.game.printf('r : ' + str(r))
                 draw_circle_on(self.game, drawing[0], radius = r, colornum = drawing[2])
 
@@ -264,6 +261,8 @@ class TestAI(object):
             enemys = get_neighboring_enemys(self.game, self.army, self.enemy)
             if self.game.frameCount % 10 == 0:    
                 self.game.printf('I catch ' + str(len(enemys)) + ' neighboring enemys .')
+            target_list = quick_wta(self.army, enemys, move_coef = 3)
+            start_attack(self.army, target_list, draw_line_game = self.game)
 
     def onUnitCreate(self, unit):
         if unit.type.isWorker:
@@ -274,7 +273,7 @@ class TestAI(object):
         if unit.type.name == "Zerg Zergling":
             #self.game.printf('creat a zergling')
             unit.attack(self.enemy_position)
-            self.drawUnits.append((unit, 16, 117))
+            self.drawUnits.append((unit, 16, COLOR_YELLOW))
             self.army.append(unit)
             
     def onUnitMorph(self, unit):
@@ -286,7 +285,7 @@ class TestAI(object):
             #self.game.printf('morph a Zergling.')
             attack_time = self.game.frameCount + self.wait_frame
             self.inactive_zerglings.append(( attack_time, unit ))
-            self.drawUnits.append((unit, 16, 111))
+            self.drawUnits.append((unit, 16, COLOR_YELLOW))
             self.army.append(unit)
     
     def minning(self, worker):        
