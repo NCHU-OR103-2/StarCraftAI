@@ -33,37 +33,32 @@ def opt_wta(weapons, targets):
 
 # not debug
 def quick_wta(weapon_units, target_units, move_coef = 1, init_counter = 6):
-    #targets_number = len(targets)
-    #target_hitpoints = [target.hitPoints for target in targets]
     target_of_weapon = []
-    #for m, weapon in enumerate(weapons):
     for unit in weapon_units:
         position = unit.position
         one_move_range = move_range_of(unit)
         fire_range = fire_range_of(unit, move_coef = move_coef)
-        #m_targets = [n for n, target in enumerate(targets) if target.position.getDistance(m_position) <= m_fire_range]
         neighboring_targets = [target_unit for target_unit in target_units if target_unit.position.getDistance(position) <= fire_range]
         counter = init_counter
         while len(neighboring_targets) == 0 and counter > 0:
             counter -= 1
             fire_range += one_move_range
-            #m_targets = [n for n, target in enumerate(targets) if target.position.getDistance(m_position) <= m_fire_range]
             neighboring_targets = [target_unit for target_unit in target_units if target_unit.position.getDistance(position) <= fire_range]
         if len(neighboring_targets) == 0:
             target_of_weapon.append(None)
             continue
-        #m_targets_hitpoints = [target_hitpoints[n] for n in m_targets]
         target_unit = min(neighboring_targets, key = lambda t: t.hitPoints)
-        #target_of_weapon.append([0]*targets_number)
-        #target_of_weapon[m][m_target] = 1
         target_of_weapon.append(target_unit)
     return target_of_weapon
 
 def start_attack(units, target_of_units, draw_line_game = None):
     for unit, target_unit in zip(units, target_of_units):
         if target_unit:
-            if not (unit.getOrderTarget or unit.getOrderTarget.id == target_unit.id):
+            if not unit.getTarget:
                 unit.attack(target_unit)
+            elif unit.getOrderTarget() and unit.getOrderTarget().id != target_unit.id:
+                unit.attack(target_unit)
+
             if draw_line_game:
                 draw_line_between(draw_line_game, unit, target_unit, colornum = COLOR_RED)
 

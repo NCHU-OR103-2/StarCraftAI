@@ -116,8 +116,8 @@ class zerg_FastBreakAI(object):
         clear_up_death_unit(self.army)       
         if len(self.army) > 0:
             enemys = get_neighboring_enemys(self.game, self.army, self.enemy)
-            if self.game.frameCount % 10 == 0:    
-                self.game.printf('I catch ' + str(len(enemys)) + ' neighboring enemys .')
+            #if self.game.frameCount % 10 == 0:    
+            #    self.game.printf('I catch ' + str(len(enemys)) + ' neighboring enemys .')
             target_list = quick_wta(self.army, enemys, move_coef = self.MOVE_COEF)
             start_attack(self.army, target_list, draw_line_game = self.game)
         
@@ -259,8 +259,8 @@ class TestAI(object):
         clear_up_death_unit(self.army)       
         if len(self.army) > 0:
             enemys = get_neighboring_enemys(self.game, self.army, self.enemy)
-            if self.game.frameCount % 10 == 0:    
-                self.game.printf('I catch ' + str(len(enemys)) + ' neighboring enemys .')
+            #if self.game.frameCount % 10 == 0:    
+            #    self.game.printf('I catch ' + str(len(enemys)) + ' neighboring enemys .')
             target_list = quick_wta(self.army, enemys, move_coef = 3)
             start_attack(self.army, target_list, draw_line_game = self.game)
 
