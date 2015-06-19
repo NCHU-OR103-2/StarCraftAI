@@ -5,6 +5,7 @@ import math
 import numpy as np
 import cvxpy as cvx
 from StarCraftAIDevelopTool import *
+from StarCraftAIBasicTool import *
 
 ## Create two scalar optimization variables.
 #x = cvx.Variable()
@@ -25,11 +26,14 @@ from StarCraftAIDevelopTool import *
 #print "optimal var", x.value, y.value
 
 # not finish
-def opt_wta(weapons, targets):
-    damage_table = [target.type.groundWeapon.damageAmount/target.type.groundWeapon.damageAmount for target in targets]
-    injury_table = build_injury_table(weapons, targets)
-    m, n = len(weapons), len(targets)
+def opt_wta(weapon_units, target_units, move_coef = 1):
+    damage_table = build_damage_table(target_units)
+    injury_table = build_injury_table(weapon_units, target_units, move_coef = move_coef)
+    write_table_in_file(damage_table, "opt_wta_damage_table.txt")
+    write_table_in_file(injury_table, "opt_wta_injury_table.txt")
+    m, n = len(weapon_units), len(target_units)
     X = cvx.Bool(m, n)
+
 
 # not debug
 def quick_wta(weapon_units, target_units, move_coef = 1, init_counter = 6):
@@ -62,10 +66,21 @@ def start_attack(units, target_of_units, draw_line_game = None):
             if draw_line_game:
                 draw_line_between(draw_line_game, unit, target_unit, colornum = COLOR_RED)
 
-# not finish
-def build_injury_table(weapons, targets):
+# not debug
+def build_damage_table(target_units):
+    return [target_unit.type.groundWeapon.damageAmount/target_unit.type.groundWeapon.damageCooldown for target_unit in target_units]
+
+# not debug
+def build_injury_table(weapon_units, target_units, move_coef = 1):
     injury_table = []
-    #for m, weapon in enumerate(weapons):
+    for m, weapon_unit in enumerate(weapon_units):
+        fire_range = fire_range_of(unit, move_coef = move_coef)
+        for n, target_unit in enumerate(target_units):
+            if get_distance_of(weapon_unit, target_unit) > fire_range:
+                injury_table[m][n] = 0
+                continue
+            injury_table[m][n] = weapon_unit.type.groundWeapon.damageAmount - target_unit.type.armor
+
 
 def move_range_of(unit, weapon_type = 'ground', move_coef = 1):
     unit_type = unit.type

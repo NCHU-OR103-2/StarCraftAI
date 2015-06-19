@@ -18,6 +18,7 @@ class zerg_FastBreakAI(object):
         self.game = getGame() 
 
     def onMatchStart(self):
+        self.game.pauseGame()
         if self.game.isReplay:
             return
         # setting basic information
@@ -172,7 +173,7 @@ class zerg_FastBreakAI(object):
 
 ###############################################################################################
 
-class TestAI(object):
+class AlphaTestAI(object):
     def __init__(self):
         # Add ourselves to the console manager as variable "k"
         pybw.consoleManager.locals.update({'k': self})
@@ -312,3 +313,31 @@ class TestAI(object):
             if builder.build(tmpD, Zerg_Spawning_Pool):
                 break
         self.StrategyStep = 1
+
+###############################################################################################
+
+class BetaTestAI(object):
+    def __init__(self):
+        # Add ourselves to the console manager as variable "k"
+        pybw.consoleManager.locals.update({'k': self})
+
+    def onConnect(self):
+        # Get the game instance
+        self.game = getGame() 
+
+    def onMatchStart(self):
+        if self.game.isReplay:
+            return
+        set_basic_information(self, self.game)
+
+    def onSendText(self, message):
+        self.message = message
+
+    def onMatchFrame(self):
+        frame_count = self.game.frameCount
+
+    def onUnitCreate(self, unit):
+        pass
+
+    def onUnitMorph(self, unit):
+        pass

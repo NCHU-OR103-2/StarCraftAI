@@ -306,7 +306,9 @@ event_handler.listeners.append( consoleManager )
 try:
     import kai7ai
     event_handler.listeners.append( kai7ai.zerg_FastBreakAI() )
-    #event_handler.listeners.append( kai7ai.TestAI() )
+    #event_handler.listeners.append( kai7ai.AlphaTestAI() )
+    #event_handler.listeners.append( kai7ai.BetaTestAI() )
+
     #import erezai.main
     #event_handler.listeners.append( erezai.main.ErezAI() )
     #import cannonai

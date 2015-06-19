@@ -21,6 +21,13 @@ def print_unittype_in(units_set):
     for unit in units_set:
         print(unit.type.name)
 
+def write_table_in_file(table, file_name, title = None):
+    my_file = open(file_name, "w")
+    for row in table:
+        for item in row:
+            my_file.write("{0:>12.2f}".format(item))
+        my_file.write("\n")
+
 COLOR_YELLOW = 61
 COLOR_RED = 111
 COLOR_GREEN = 118
