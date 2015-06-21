@@ -1,14 +1,33 @@
 from pybw_swig import * # import all constants and classes
 import pybw
 
-def whole_battlefield_scan(ai, game):
-    pass
+def initial_units_scan(player, scan_visible_enemy = False, game = None):
+    for unit_type in player.unittype_set:
+        player.units_dictionary[unit_type] = set()
+    if not scan_visible_enemy:
+        for unit in player.units:
+            player.units_dictionary[unit.type].add(unit)
+    else:
+        player.visible_enemy_units.clear()
+        for unit in game.allUnits:
+            if unit.player == player:
+                player.units_dictionary[unit.type].add(unit)
+            elif unit.player == player.enemy:
+                player.visible_enemy_units.add(unit)
 
 def set_basic_information(ai, game):
     ai.me = game.self
-    ai.race = game.self.race
-    ai.army = []
+    ai.race = game.self.race    
     build_unittype_dictionary(ai.me)
+    ai.enemys = []
+    players = game.getPlayers()
+    for player in players:
+        if ai.me.isEnemy(player):
+            ai.enemys.append(player)
+    ai.enemy = ai.enemys[0]
+    ai.me.enemy = ai.enemy
+    ai.me.visible_enemy_units = set()
+    ai.army = []
 
 def get_specify_unittype(units_set, unittype):
     specify_units = []
@@ -31,36 +50,101 @@ def clear_up_death_unit(units_set, is_tuple=False):
 def get_distance_of(unit1, unit2):
     return unit1.position.getDistance(unit2.position)
 
+
 def build_unittype_dictionary(player):
     if player.race == Terran:
-        player.iunittype_set = { Terran_SCV, Terran_Marine, Terran_Firebat, Terran_Medic, Terran_Ghost \
-                               , Terran_Vulture, Terran_Siege_Tank_Tank_Mode, Terran_Siege_Tank_Siege_Mode, Terran_Goliath \
-                               , Terran_Wraith, Terran_Dropship, Terran_Battlecruiser, Terran_Science_Vessel, Terran_Valkyrie \
-                               , Terran_Command_Center, Terran_Supply_Depot, Terran_Refinery \
-                               , Terran_Barracks, Terran_Academy, Terran_Factory \
-                               , Terran_Starport, Terran_Science_Facility, Terran_Engineering_Bay \
-                               , Terran_Armory, Terran_Missile_Turret, Terran_Bunker }
+        player.unittype_set = UNITTYPES_TERRAN        
+        player.unittype_set_ground_unit = UNITTYPES_TERRAN_GROUND_UNIT
+        player.unittype_set_air_unit = UNITTYPES_TERRAN_AIR_UNIT
+        player.unittype_set_building = UNITTYPES_TERRAN_BUILDING
     elif player.race == Zerg:
-        player.unittype_set = { Zerg_Drone, Zerg_Zergling, Zerg_Hydralisk, Zerg_Lurker \
-                              , Zerg_Ultralisk, Zerg_Defiler, Zerg_Broodling, Zerg_Infested_Terran \
-                              , Zerg_Overlord, Zerg_Mutalisk, Zerg_Queen, Zerg_Scourge \
-                              , Zerg_Guardian, Zerg_Devourer \
-                              , Zerg_Hatchery, Zerg_Lair, Zerg_Hive, Zerg_Extractor, Zerg_Infested_Command_Center \
-                              , Zerg_Spawning_Pool, Zerg_Evolution_Chamber, Zerg_Hydralisk_Den \
-                              , Zerg_Creep_Colony, Zerg_Spore_Colony, Zerg_Sunken_Colony \
-                              , Zerg_Spire, Zerg_Greater_Spire, Zerg_Queens_Nest \
-                              , Zerg_Ultralisk_Cavern, Zerg_Defiler_Mound, Zerg_Nydus_Canal }
+        player.unittype_set = UNITTYPES_ZERG
+        player.unittype_set_ground_unit = UNITTYPES_ZERG_GROUND_UNIT
+        player.unittype_set_air_unit = UNITTYPES_ZERG_AIR_UNIT
+        player.unittype_set_building = UNITTYPES_ZERG_BUILDING
     elif player.race == Protoss:
-        player.unittype_set = { Protoss_Probe, Protoss_Zealot, Protoss_Dragoon, Protoss_Reaver \
-                              , Protoss_High_Templar, Protoss_Dark_Templar, Protoss_Archon, Protoss_Dark_Archon \
-                              , Protoss_Scout, Protoss_Shuttle, Protoss_Carrier \
-                              , Protoss_Observer, Protoss_Corsair, Protoss_Arbiter \
-                              , Protoss_Nexus, Protoss_Pylon, Protoss_Assimilator, Protoss_Photon_Cannon \
-                              , Protoss_Gateway, Protoss_Cybernetics_Core, Protoss_Forge \
-                              , Protoss_Citadel_of_Adun, Protoss_Templar_Archives, Protoss_Shield_Battery \
-                              , Protoss_Robotics_Facility, Protoss_Observatory, Protoss_Robotics_Support_Bay \
-                              , Protoss_Stargate, Protoss_Fleet_Beacon, Protoss_Arbiter_Tribunal }
+        player.unittype_set = UNITTYPES_PROTOSS
+        player.unittype_set_ground_unit = UNITTYPES_PROTOSS_GROUND_UNIT
+        player.unittype_set_air_unit = UNITTYPES_PROTOSS_AIR_UNIT
+        player.unittype_set_building = UNITTYPES_PROTOSS_BUILDING
+    player.unittype_set_army = player.unittype_set_ground_unit | player.unittype_set_air_unit
+    player.unittype_set_army.remove(player.race.worker)
     player.units_dictionary = dict()
     for unit_type in player.unittype_set:
-        player.units_dictionary.setdefault(unit_type, [])
+        player.units_dictionary.setdefault(unit_type, set())
 
+
+#########################################################################################
+
+UNITTYPES_TERRAN \
+    = { Terran_SCV, Terran_Marine, Terran_Firebat, Terran_Medic, Terran_Ghost \
+      , Terran_Vulture, Terran_Siege_Tank_Tank_Mode, Terran_Siege_Tank_Siege_Mode, Terran_Goliath \
+      , Terran_Wraith, Terran_Dropship, Terran_Battlecruiser, Terran_Science_Vessel, Terran_Valkyrie \
+      , Terran_Command_Center, Terran_Supply_Depot, Terran_Refinery \
+      , Terran_Barracks, Terran_Academy, Terran_Factory \
+      , Terran_Starport, Terran_Science_Facility, Terran_Engineering_Bay \
+      , Terran_Armory, Terran_Missile_Turret, Terran_Bunker }
+
+UNITTYPES_ZERG \
+    = { Zerg_Drone, Zerg_Zergling, Zerg_Hydralisk, Zerg_Lurker \
+      , Zerg_Ultralisk, Zerg_Defiler, Zerg_Broodling, Zerg_Infested_Terran \
+      , Zerg_Overlord, Zerg_Mutalisk, Zerg_Queen, Zerg_Scourge \
+      , Zerg_Guardian, Zerg_Devourer \
+      , Zerg_Hatchery, Zerg_Lair, Zerg_Hive, Zerg_Extractor, Zerg_Infested_Command_Center \
+      , Zerg_Spawning_Pool, Zerg_Evolution_Chamber, Zerg_Hydralisk_Den \
+      , Zerg_Creep_Colony, Zerg_Spore_Colony, Zerg_Sunken_Colony \
+      , Zerg_Spire, Zerg_Greater_Spire, Zerg_Queens_Nest \
+      , Zerg_Ultralisk_Cavern, Zerg_Defiler_Mound, Zerg_Nydus_Canal }
+
+UNITTYPES_PROTOSS \
+    = { Protoss_Probe, Protoss_Zealot, Protoss_Dragoon, Protoss_Reaver \
+      , Protoss_High_Templar, Protoss_Dark_Templar, Protoss_Archon, Protoss_Dark_Archon \
+      , Protoss_Scout, Protoss_Shuttle, Protoss_Carrier \
+      , Protoss_Observer, Protoss_Corsair, Protoss_Arbiter \
+      , Protoss_Nexus, Protoss_Pylon, Protoss_Assimilator, Protoss_Photon_Cannon \
+      , Protoss_Gateway, Protoss_Cybernetics_Core, Protoss_Forge \
+      , Protoss_Citadel_of_Adun, Protoss_Templar_Archives, Protoss_Shield_Battery \
+      , Protoss_Robotics_Facility, Protoss_Observatory, Protoss_Robotics_Support_Bay \
+      , Protoss_Stargate, Protoss_Fleet_Beacon, Protoss_Arbiter_Tribunal }
+
+UNITTYPES_TERRAN_GROUND_UNIT \
+    = { Terran_SCV, Terran_Marine, Terran_Firebat, Terran_Medic, Terran_Ghost \
+      , Terran_Vulture, Terran_Siege_Tank_Tank_Mode, Terran_Siege_Tank_Siege_Mode, Terran_Goliath }
+
+UNITTYPES_TERRAN_AIR_UNIT \
+    = { Terran_Wraith, Terran_Dropship, Terran_Battlecruiser, Terran_Science_Vessel, Terran_Valkyrie }
+
+UNITTYPES_TERRAN_BUILDING \
+    = { Terran_Command_Center, Terran_Supply_Depot, Terran_Refinery \
+      , Terran_Barracks, Terran_Academy, Terran_Factory \
+      , Terran_Starport, Terran_Science_Facility, Terran_Engineering_Bay \
+      , Terran_Armory, Terran_Missile_Turret, Terran_Bunker }
+
+UNITTYPES_ZERG_GROUND_UNIT \
+    = { Zerg_Drone, Zerg_Zergling, Zerg_Hydralisk, Zerg_Lurker \
+      , Zerg_Ultralisk, Zerg_Defiler, Zerg_Broodling, Zerg_Infested_Terran }
+
+UNITTYPES_ZERG_AIR_UNIT \
+    = { Zerg_Overlord, Zerg_Mutalisk, Zerg_Queen, Zerg_Scourge \
+      , Zerg_Guardian, Zerg_Devourer }
+
+UNITTYPES_ZERG_BUILDING \
+    = { Zerg_Hatchery, Zerg_Lair, Zerg_Hive, Zerg_Extractor, Zerg_Infested_Command_Center \
+      , Zerg_Spawning_Pool, Zerg_Evolution_Chamber, Zerg_Hydralisk_Den \
+      , Zerg_Creep_Colony, Zerg_Spore_Colony, Zerg_Sunken_Colony \
+      , Zerg_Spire, Zerg_Greater_Spire, Zerg_Queens_Nest \
+      , Zerg_Ultralisk_Cavern, Zerg_Defiler_Mound, Zerg_Nydus_Canal }
+
+UNITTYPES_PROTOSS_GROUND_UNIT \
+    = { Protoss_Probe, Protoss_Zealot, Protoss_Dragoon, Protoss_Reaver \
+      , Protoss_High_Templar, Protoss_Dark_Templar, Protoss_Archon, Protoss_Dark_Archon }
+
+UNITTYPES_PROTOSS_AIR_UNIT \
+    = { Protoss_Scout, Protoss_Shuttle, Protoss_Carrier \
+      , Protoss_Observer, Protoss_Corsair, Protoss_Arbiter }
+
+UNITTYPES_PROTOSS_BUILDING \
+    = { Protoss_Gateway, Protoss_Cybernetics_Core, Protoss_Forge \
+      , Protoss_Citadel_of_Adun, Protoss_Templar_Archives, Protoss_Shield_Battery \
+      , Protoss_Robotics_Facility, Protoss_Observatory, Protoss_Robotics_Support_Bay \
+      , Protoss_Stargate, Protoss_Fleet_Beacon, Protoss_Arbiter_Tribunal }

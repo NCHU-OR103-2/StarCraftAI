@@ -305,9 +305,9 @@ event_handler.listeners.append( consoleManager )
 #import KaisevenOptimizeSC as k7opt
 try:
     import kai7ai
-    event_handler.listeners.append( kai7ai.zerg_FastBreakAI() )
+    #event_handler.listeners.append( kai7ai.zerg_FastBreakAI() )
     #event_handler.listeners.append( kai7ai.AlphaTestAI() )
-    #event_handler.listeners.append( kai7ai.BetaTestAI() )
+    event_handler.listeners.append( kai7ai.BetaTestAI() )
 
     #import erezai.main
     #event_handler.listeners.append( erezai.main.ErezAI() )

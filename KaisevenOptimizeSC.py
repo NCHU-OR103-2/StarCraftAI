@@ -1,3 +1,5 @@
+from __future__ import division
+
 from pybw_swig import * # import all constants and classes
 import pybw
 import math
@@ -26,13 +28,21 @@ from StarCraftAIBasicTool import *
 #print "optimal var", x.value, y.value
 
 # not finish
-def opt_wta(weapon_units, target_units, move_coef = 1):
+def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
+    game.printf('star opt_wta\n---------------------')
     damage_table = build_damage_table(target_units)
+    #ai.damage_table = damage_table
+    game.printf('len(damage_table) = ' + str(len(damage_table)))
     injury_table = build_injury_table(weapon_units, target_units, move_coef = move_coef)
-    write_table_in_file(damage_table, "opt_wta_damage_table.txt")
-    write_table_in_file(injury_table, "opt_wta_injury_table.txt")
+    #ai.injury_table = injury_table
+    game.printf('len(injury_table) = ' + str(len(injury_table)))
+    #write_1D_table_in_file(damage_table, "opt_wta_damage_table.txt")
+    #write_2D_table_in_file(injury_table, "opt_wta_injury_table.txt")
+    write_data_in_pickle_file(damage_table, 'dt.pkl')
+    write_data_in_pickle_file(injury_table, 'it.pkl')
     m, n = len(weapon_units), len(target_units)
-    X = cvx.Bool(m, n)
+    #X = cvx.Bool(m, n)
+
 
 
 # not debug
@@ -64,7 +74,7 @@ def start_attack(units, target_of_units, draw_line_game = None):
                 unit.attack(target_unit)
 
             if draw_line_game:
-                draw_line_between(draw_line_game, unit, target_unit, colornum = COLOR_RED)
+                draw_line_between(draw_line_game, unit, target_unit, color = COLOR_RED)
 
 # not debug
 def build_damage_table(target_units):
@@ -74,13 +84,15 @@ def build_damage_table(target_units):
 def build_injury_table(weapon_units, target_units, move_coef = 1):
     injury_table = []
     for m, weapon_unit in enumerate(weapon_units):
-        fire_range = fire_range_of(unit, move_coef = move_coef)
+        row = []
+        fire_range = fire_range_of(weapon_unit, move_coef = move_coef)
         for n, target_unit in enumerate(target_units):
             if get_distance_of(weapon_unit, target_unit) > fire_range:
-                injury_table[m][n] = 0
+                row.append(0)
                 continue
-            injury_table[m][n] = weapon_unit.type.groundWeapon.damageAmount - target_unit.type.armor
-
+            row.append(weapon_unit.type.groundWeapon.damageAmount - target_unit.type.armor)
+        injury_table.append(row)
+    return injury_table
 
 def move_range_of(unit, weapon_type = 'ground', move_coef = 1):
     unit_type = unit.type
