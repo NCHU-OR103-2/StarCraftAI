@@ -29,21 +29,90 @@ from StarCraftAIBasicTool import *
 
 # not finish
 def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
-    game.printf('star opt_wta\n---------------------')
+    #game.printf('star opt_wta\n---------------------')
     damage_table = build_damage_table(target_units)
     #ai.damage_table = damage_table
-    game.printf('len(damage_table) = ' + str(len(damage_table)))
+    #game.printf('len(damage_table) = ' + str(len(damage_table)))
+    hitpoints_table = build_hitpoints_table(target_units)
     injury_table = build_injury_table(weapon_units, target_units, move_coef = move_coef)
     #ai.injury_table = injury_table
-    game.printf('len(injury_table) = ' + str(len(injury_table)))
+    #game.printf('len(injury_table) = ' + str(len(injury_table)))
     #write_1D_table_in_file(damage_table, "opt_wta_damage_table.txt")
     #write_2D_table_in_file(injury_table, "opt_wta_injury_table.txt")
-    write_data_in_pickle_file(damage_table, 'dt.pkl')
-    write_data_in_pickle_file(injury_table, 'it.pkl')
+    #write_data_in_pickle_file(damage_table, 'dt.pkl')
+    #write_data_in_pickle_file(injury_table, 'it.pkl')
+    #write_data_in_pickle_file(hitpoints_table, 'ht.pkl')
     m, n = len(weapon_units), len(target_units)
-    #X = cvx.Bool(m, n)
+    X = cvx.Bool(m, n)
 
+    tmp_func = hitpoints_table[0] - injury_table[0][0] * X[0, 0]
+    for i in range(1, m):
+        tmp_func  = tmp_func - injury_table[i][0] * X[i, 0]
+    obj_func = damage_table[0] / target_units[0].type.maxHitPoints * tmp_func 
+    for j in range(1, n):
+        tmp_func = hitpoints_table[j] - injury_table[0][j] * X[0, j]
+        for i in range(1, m):
+            tmp_func  = tmp_func - injury_table[i][j] * X[i, j]
+        obj_func = obj_func + damage_table[j] / target_units[j].type.maxHitPoints * tmp_func
+     
+    obj_func = cvx.Minimize(obj_func)
+    
+    cons = []
+    for i in range(m):
+        tmp_cons = X[i, 0]
+        for j in range(1, n):
+            tmp_cons = tmp_cons + X[i, j]
+        tmp_cons = tmp_cons <= 1
+        cons.append(tmp_cons)
 
+    mT = []
+    for j in range(n):
+        min_value = float('inf')
+        for i in range(m):
+            if injury_table[i][j] != 0 and injury_table[i][j] < min_value:
+                min_value = injury_table[i][j]
+        if min_value == float('inf'):
+            mT.append(0)
+        else:
+            mT.append(min_value)
+    
+    some_coef = 1.2
+    for j in range(n):
+        tmp_cons = injury_table[0][j] * X[0, j]
+        for i in range(1, m):
+            tmp_cons  = tmp_cons + injury_table[i][j] * X[i, j]
+        tmp_cons = tmp_cons <= hitpoints_table[j] + some_coef * mT[j]
+        cons.append(tmp_cons)
+    
+    prob = cvx.Problem(obj_func, cons)
+    prob.solve()
+    
+    #R = []
+    #for i in range(m):
+    #    r = []
+    #    for j in range(n):
+    #        if X[i, j].value < 0.1:
+    #            r.append(0)
+    #        else:
+    #            r.append(1)
+    #    R.append(r)
+    #write_2D_table_in_file(R, "opt_result_table.txt")
+
+    target_of_weapon = []
+    #opt_wta_table = []
+    for i in range(m):
+        target_of_weapon.append(None)
+        opt_wta_table.append(None)
+        for j in range(n):
+            if X[i, j].value > 0.1:
+                target_of_weapon[i] = target_units[j]
+                #opt_wta_table[i] = j
+                break
+        if not target_of_weapon[i]:
+            target_of_weapon[i] = target_units[0]
+            #opt_wta_table[i] = 0
+    #write_1D_table_in_file(opt_wta_table, "opt_wta_table.txt")
+    return target_of_weapon
 
 # not debug
 def quick_wta(weapon_units, target_units, move_coef = 1, init_counter = 6):
@@ -79,6 +148,9 @@ def start_attack(units, target_of_units, draw_line_game = None):
 # not debug
 def build_damage_table(target_units):
     return [target_unit.type.groundWeapon.damageAmount/target_unit.type.groundWeapon.damageCooldown for target_unit in target_units]
+
+def build_hitpoints_table(target_units):
+    return [target_unit.hitPoints for target_unit in target_units]
 
 # not debug
 def build_injury_table(weapon_units, target_units, move_coef = 1):

@@ -342,7 +342,7 @@ class BetaTestAI(object):
                 draw_range_circle_on(self.game, unit, move_coef = self.MOVE_COEF)
         #self.game.printf('len(my_army) = ' + str(len(my_army)))
         #self.game.printf('len(my_army) = ' + str(len(my_enemy)))
-        opt_wta(my_army, my_enemy, move_coef = self.MOVE_COEF, game = self.game)
+        #opt_wta(my_army, my_enemy, move_coef = self.MOVE_COEF, game = self.game)
         #self.game.printf('opt_wta finish')
         #self.game.pauseGame()
 
