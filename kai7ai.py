@@ -18,7 +18,7 @@ class zerg_FastBreakAI(object):
         self.game = getGame() 
 
     def onMatchStart(self):
-        self.game.pauseGame()
+        #self.game.pauseGame()
         if self.game.isReplay:
             return
         # setting basic information
@@ -112,15 +112,15 @@ class zerg_FastBreakAI(object):
         if len(self.drawUnits) > 0:
             for drawing in self.drawUnits:
                 r = int(math.ceil(fire_range_of(drawing[0], move_coef = self.MOVE_COEF)))
-                draw_circle_on(self.game, drawing[0], radius = r, colornum = drawing[2])
+                draw_circle_on(self.game, drawing[0], radius = r, color = COLOR_YELLOW)
 
         clear_up_death_unit(self.army)       
         if len(self.army) > 0:
             enemys = get_neighboring_enemys(self.game, self.army, self.enemy)
-            #if self.game.frameCount % 10 == 0:    
-            #    self.game.printf('I catch ' + str(len(enemys)) + ' neighboring enemys .')
+            if self.game.frameCount % 10 == 0:    
+                self.game.printf('I catch ' + str(len(enemys)) + ' neighboring enemys .')
             target_list = quick_wta(self.army, enemys, move_coef = self.MOVE_COEF)
-            start_attack(self.army, target_list, draw_line_game = self.game)
+            start_attack(self.game, self.army, target_list, draw_line_game = True)
         
     def onUnitCreate(self, unit):
         if unit.type.isWorker:
@@ -145,7 +145,9 @@ class zerg_FastBreakAI(object):
             self.inactive_zerglings.append(( attack_time, unit ))
             self.drawUnits.append((unit, 16, COLOR_YELLOW))
             self.army.append(unit)
-    
+    def onUnitComplete(self, unit):
+        self.game.printf('onUnitComplete : ' + unit.type.name)
+
     def minning(self, worker):        
         #self.game.printf("go minning")
         mineral = self.mineral_queue.pop(0)
@@ -253,17 +255,17 @@ class AlphaTestAI(object):
 
         if len(self.drawUnits) > 0:
             for drawing in self.drawUnits:
-                r = int(math.ceil(fire_range_of(drawing[0], move_coef = 3)))
+                r = int(math.ceil(fire_range_of(drawing[0], move_coef = 2)))
                 #self.game.printf('r : ' + str(r))
-                draw_circle_on(self.game, drawing[0], radius = r, colornum = drawing[2])
+                draw_circle_on(self.game, drawing[0], radius = r, color = COLOR_YELLOW)
 
         clear_up_death_unit(self.army)       
         if len(self.army) > 0:
             enemys = get_neighboring_enemys(self.game, self.army, self.enemy)
-            #if self.game.frameCount % 10 == 0:    
-            #    self.game.printf('I catch ' + str(len(enemys)) + ' neighboring enemys .')
-            target_list = quick_wta(self.army, enemys, move_coef = 3)
-            start_attack(self.army, target_list, draw_line_game = self.game)
+            if self.game.frameCount % 10 == 0:    
+                self.game.printf('I catch ' + str(len(enemys)) + ' neighboring enemys .')
+            target_list = quick_wta(self.army, enemys, move_coef = 2)
+            start_attack(self.game, self.army, target_list, draw_line_game = True)
 
     def onUnitCreate(self, unit):
         if unit.type.isWorker:
@@ -330,7 +332,7 @@ class BetaTestAI(object):
             return
         set_basic_information(self, self.game)
         initial_units_scan(self.me, scan_visible_enemy = True, game = self.game)
-        self.MOVE_COEF = 1
+        self.MOVE_COEF = 0.5
         my_army = []
         for key in self.me.units_dictionary.keys():
             if key in self.me.unittype_set_army:
@@ -356,14 +358,19 @@ class BetaTestAI(object):
         for key in self.me.units_dictionary.keys():
             if key in self.me.unittype_set_army:
                 my_army += list(self.me.units_dictionary[key])
+        self.army = my_army
         my_enemy = list(self.me.visible_enemy_units)
-        if len(my_army) > 0:
-            for unit in my_army:
-                draw_range_circle_on(self.game, unit, move_coef = self.MOVE_COEF)
+
+        #if len(my_army) > 0:
+        #    for unit in my_army:
+        #        draw_range_circle_on(self.game, unit, move_coef = self.MOVE_COEF)
+        if len(my_enemy) > 0:
+            for unit in my_enemy:
+                show_hitpoints_of(self.game, unit)
         if len(my_army) > 0 and len(my_enemy) > 0:
-            target_list = quick_wta(my_army, my_enemy, move_coef = self.MOVE_COEF)
-            #target_list = opt_wta(my_army, my_enemy, move_coef = self.MOVE_COEF)
-            start_attack(my_army, target_list, draw_line_game = self.game)
+            #target_list = quick_wta(my_army, my_enemy, move_coef = self.MOVE_COEF)
+            target_list = opt_wta(my_army, my_enemy, move_coef = self.MOVE_COEF, game = self.game)
+            start_attack(self.game, my_army, target_list, draw_line_game = True) 
 
     def onUnitDestroy(self, unit):
         #self.game.printf('Unit destroy : ' + unit.type.name)

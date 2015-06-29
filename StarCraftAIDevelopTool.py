@@ -1,3 +1,5 @@
+from __future__ import division
+
 from pybw_swig import * # import all constants and classes
 import pybw
 import math
@@ -27,6 +29,20 @@ def draw_line_between(game, unit_1, unit_2, color = Color(0, 0, 0)):
 
 def draw_box_on(game, unit, color = Color(0, 0, 0)):
     game.drawBoxMap(unit.left, unit.top, unit.right, unit.bottom, color)
+
+def show_hitpoints_of(game, unit):
+    x = unit.right
+    y = unit.bottom
+    hp = unit.hitPoints
+    max_hp = unit.type.maxHitPoints
+    ratio = hp / max_hp
+    if ratio > 0.5:
+        text = '\x07 ' + str(hp)
+    elif ratio > 0.2:
+        text = '\x17 ' + str(hp)
+    else:
+        text = '\x08' + str(hp)
+    game.drawTextMap(x, y, text)
 
 def print_unittype_in(units_set):
     for unit in units_set:

@@ -48,12 +48,12 @@ def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
     tmp_func = hitpoints_table[0] - injury_table[0][0] * X[0, 0]
     for i in range(1, m):
         tmp_func  = tmp_func - injury_table[i][0] * X[i, 0]
-    obj_func = damage_table[0] / target_units[0].type.maxHitPoints * tmp_func 
+    obj_func = damage_table[0] / (target_units[0].hitPoints * target_units[0].type.maxHitPoints) * tmp_func 
     for j in range(1, n):
         tmp_func = hitpoints_table[j] - injury_table[0][j] * X[0, j]
         for i in range(1, m):
             tmp_func  = tmp_func - injury_table[i][j] * X[i, j]
-        obj_func = obj_func + damage_table[j] / target_units[j].type.maxHitPoints * tmp_func
+        obj_func = obj_func + damage_table[j] / (target_units[j].hitPoints * target_units[j].type.maxHitPoints) * tmp_func
      
     obj_func = cvx.Minimize(obj_func)
     
@@ -102,7 +102,7 @@ def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
     #opt_wta_table = []
     for i in range(m):
         target_of_weapon.append(None)
-        opt_wta_table.append(None)
+        #opt_wta_table.append(None)
         for j in range(n):
             if X[i, j].value > 0.1:
                 target_of_weapon[i] = target_units[j]
@@ -112,6 +112,7 @@ def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
             target_of_weapon[i] = target_units[0]
             #opt_wta_table[i] = 0
     #write_1D_table_in_file(opt_wta_table, "opt_wta_table.txt")
+    #game.printf('opt complete !\n')
     return target_of_weapon
 
 # not debug
@@ -134,16 +135,24 @@ def quick_wta(weapon_units, target_units, move_coef = 1, init_counter = 6):
         target_of_weapon.append(target_unit)
     return target_of_weapon
 
-def start_attack(units, target_of_units, draw_line_game = None):
+def start_attack(game, units, target_of_units, draw_line_game = False):
     for unit, target_unit in zip(units, target_of_units):
         if target_unit:
-            if not unit.getTarget:
-                unit.attack(target_unit)
-            elif unit.getOrderTarget() and unit.getOrderTarget().id != target_unit.id:
-                unit.attack(target_unit)
-
+            if not unit.getTarget():
+                #unit.attack(target_unit)
+                unit.rightClick(target_unit)
+            elif unit.getTarget() != target_unit:
+                #unit.attack(target_unit)
+                unit.rightClick(target_unit)
+            elif unit.getOrderTarget() and unit.getOrderTarget() != target_unit:
+                #unit.attack(target_unit)
+                unit.rightClick(target_unit)    
             if draw_line_game:
-                draw_line_between(draw_line_game, unit, target_unit, color = COLOR_RED)
+                draw_line_between(game, unit, target_unit, color = COLOR_RED)
+
+def attack_neighboring_enemy(game, unit):
+    enemys = UnitSet(game.getUnitsInRadius(unit.position, unit.type.groundWeapon.maxRange))
+
 
 # not debug
 def build_damage_table(target_units):
@@ -187,18 +196,20 @@ def fire_range_of(unit, weapon_type = 'ground', move_coef = 1):
 def get_neighboring_enemys(game, my_unit_set, enemy_player, method = 'alpha'):  
     if method == 'alpha':
         total_enemys = [ unit for unit in game.allUnits if unit.player == enemy_player ]
+        #game.printf('len(total_enemys) : ' + str(len(total_enemys)))
         neighboring_enemys = []
         for my_unit in my_unit_set:
-            my_unit_fire_range = int(math.ceil(fire_range_of(my_unit, move_coef = 2)))
+            my_unit_fire_range = int(math.ceil(fire_range_of(my_unit, move_coef = 1)))
             # the below statement can't work, and I don't know why . It take me 1.5 hours to debug.   Orz ...
             #my_unit_neighboring_units = UnitSet(my_unit.getUnitsInRadius(my_unit_fire_range))
             my_unit_neighboring_units = UnitSet(game.getUnitsInRadius(my_unit.position, my_unit_fire_range))
+            #game.printf('len(my_unit_neighboring_units) : ' + str(len(my_unit_neighboring_units)))
             for enemy in total_enemys:
                 if enemy in my_unit_neighboring_units:
                     #game.printf('I got you !')
                     neighboring_enemys.append(enemy)
                     total_enemys.remove(enemy)
-        #game.printf('len(neighboring_enemys) : ' + str(len(neighboring_enemys)))
+        game.printf('len(neighboring_enemys) : ' + str(len(neighboring_enemys)))
         return neighboring_enemys
     else:
         return []
