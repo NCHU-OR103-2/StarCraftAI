@@ -387,8 +387,8 @@ class BetaTestAI(object):
             my_army_center = (x, y)
             self.game.drawCircleMap(x, y, 5, COLOR_CYAN)
             self.game.drawCircleMap(x, y, 6, COLOR_CYAN)
-            for unit in my_army:
-                draw_range_circle_on(self.game, unit, move_coef = self.MOVE_COEF)
+            #for unit in my_army:
+            #    draw_range_circle_on(self.game, unit, move_coef = self.MOVE_COEF)
         if len(my_enemy) > 0:
             x, y = get_group_center_of(my_enemy)
             my_enemy_center = (x, y)
