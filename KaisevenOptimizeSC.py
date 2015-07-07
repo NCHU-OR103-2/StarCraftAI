@@ -3,6 +3,7 @@ from __future__ import division
 from pybw_swig import * # import all constants and classes
 import pybw
 import math
+import time
 
 import numpy as np
 import cvxpy as cvx
@@ -27,9 +28,10 @@ from StarCraftAIBasicTool import *
 #print "optimal value", prob.value
 #print "optimal var", x.value, y.value
 
-# not finish
+# finish
 def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
-    #game.printf('star opt_wta\n---------------------')
+    start_time = time.time()
+
     damage_table = build_damage_table(target_units)
     #ai.damage_table = damage_table
     #game.printf('len(damage_table) = ' + str(len(damage_table)))
@@ -37,8 +39,10 @@ def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
     injury_table = build_injury_table(weapon_units, target_units, move_coef = move_coef)
     #ai.injury_table = injury_table
     #game.printf('len(injury_table) = ' + str(len(injury_table)))
+    move_cost_table, total_move_cost = build_move_cost_table(weapon_units, target_units)
     #write_1D_table_in_file(damage_table, "opt_wta_damage_table.txt")
     #write_2D_table_in_file(injury_table, "opt_wta_injury_table.txt")
+    write_2D_table_in_file(injury_table, "opt_wta_move_cost_table.txt")
     #write_data_in_pickle_file(damage_table, 'dt.pkl')
     #write_data_in_pickle_file(injury_table, 'it.pkl')
     #write_data_in_pickle_file(hitpoints_table, 'ht.pkl')
@@ -54,7 +58,12 @@ def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
         for i in range(1, m):
             tmp_func  = tmp_func - injury_table[i][j] * X[i, j]
         obj_func = obj_func + damage_table[j] / (target_units[j].hitPoints * target_units[j].type.maxHitPoints) * tmp_func
-     
+    
+    #if total_move_cost > 0:
+    #    for i in range(1, m):
+    #        for j in range(1, n):
+    #            obj_func = obj_func + X[i, j] * (move_cost_table[i][j] / total_move_cost)**2
+    
     obj_func = cvx.Minimize(obj_func)
     
     cons = []
@@ -112,10 +121,10 @@ def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
             target_of_weapon[i] = target_units[0]
             #opt_wta_table[i] = 0
     #write_1D_table_in_file(opt_wta_table, "opt_wta_table.txt")
-    #game.printf('opt complete !\n')
+    print("--- %s seconds ---" % (time.time() - start_time))
     return target_of_weapon
 
-# not debug
+# finish
 def quick_wta(weapon_units, target_units, move_coef = 1, init_counter = 6):
     target_of_weapon = []
     for unit in weapon_units:
@@ -135,20 +144,115 @@ def quick_wta(weapon_units, target_units, move_coef = 1, init_counter = 6):
         target_of_weapon.append(target_unit)
     return target_of_weapon
 
-def start_attack(game, units, target_of_units, draw_line_game = False):
-    for unit, target_unit in zip(units, target_of_units):
-        if target_unit:
-            if not unit.getTarget():
-                #unit.attack(target_unit)
-                unit.rightClick(target_unit)
-            elif unit.getTarget() != target_unit:
-                #unit.attack(target_unit)
-                unit.rightClick(target_unit)
-            elif unit.getOrderTarget() and unit.getOrderTarget() != target_unit:
-                #unit.attack(target_unit)
-                unit.rightClick(target_unit)    
-            if draw_line_game:
-                draw_line_between(game, unit, target_unit, color = COLOR_RED)
+def start_attack(game, units, target_of_units, draw_line_game = False, moving_fire = None, my_center = None, enemy_center = None):
+    if not moving_fire:
+        for unit, target_unit in zip(units, target_of_units):
+            if not target_unit or unit.isAttackFrame:
+                continue
+            if unit.target:
+                if unit.target != target_unit:
+                    unit.attack(target_unit)
+                    #unit.rightClick(target_unit)
+            else:
+                if not unit.orderTarget:
+                    unit.attack(target_unit)
+                    #unit.rightClick(target_unit)
+                elif unit.orderTarget != target_unit:
+                    unit.attack(target_unit)
+                    #unit.rightClick(target_unit)
+    else:
+        retreat_hp_ratio = 0.3
+        delta_x = my_center[0] - enemy_center[0]
+        delta_y = my_center[1] - enemy_center[1]
+        hypotenuse = math.sqrt(delta_x**2 + delta_y**2)
+
+        for unit, target_unit in zip(units, target_of_units):
+            if not target_unit or unit.isAttackFrame:
+                continue
+            target_is_flyer = target_unit.type.isFlyer
+            if not target_is_flyer:
+                cooldown = unit.groundWeaponCooldown
+                max_range = unit.groundWeapon.maxRange
+            else:
+                cooldown = unit.airWeaponCooldown
+                max_range = unit.airWeapon.maxRange
+            target_max_range = target_unit.groundWeapon.maxRange
+            residue_hp_ratio = unit.hitPoints / unit.type.maxHitPoints
+            x, y = unit.position.x, unit.position.y
+
+            if unit.isMoving:
+                if residue_hp_ratio <= retreat_hp_ratio and len(unit.aim_by_units) != 0:
+                    if unit.target:
+                        destination = Position(x + int(32 * delta_x / hypotenuse), y + int(32 * delta_y / hypotenuse))
+                        unit.move(destination)
+                elif residue_hp_ratio > retreat_hp_ratio and len(unit.aim_by_units) != 0:
+                    if max_range > target_max_range:
+                        pass
+                    else:
+                        pass
+                elif residue_hp_ratio <= retreat_hp_ratio and len(unit.aim_by_units) == 0:
+                    if unit.target:
+                        if unit.target != target_unit:
+                            unit.attack(target_unit)
+                            continue
+                    if not unit.orderTarget:
+                        unit.attack(target_unit)
+                    elif unit.orderTarget != target_unit:
+                        unit.attack(target_unit)
+                elif residue_hp_ratio > retreat_hp_ratio and len(unit.aim_by_units) == 0:
+                    if not unit.orderTarget:
+                        unit.attack(target_unit)
+                    elif unit.orderTarget != target_unit:
+                        unit.attack(target_unit)
+
+            else:
+                if residue_hp_ratio <= retreat_hp_ratio and unit.isUnderAttack:
+                    if unit.target or unit.orderTarget:
+                        destination = Position(x + int(32 * delta_x / hypotenuse), y + int(32 * delta_y / hypotenuse))
+                        unit.move(destination)
+                elif residue_hp_ratio > retreat_hp_ratio and unit.isUnderAttack:
+                    pass
+                elif residue_hp_ratio <= retreat_hp_ratio and not unit.isUnderAttack:
+                    if not unit.orderTarget:
+                        unit.attack(target_unit)
+                    elif unit.orderTarget != target_unit:
+                        unit.attack(target_unit)
+                elif residue_hp_ratio > retreat_hp_ratio and not unit.isUnderAttack:
+                    pass 
+    if draw_line_game:
+        for unit, target_unit in zip(units, target_of_units):
+            if not target_unit:
+                continue
+            draw_line_between(game, unit, target_unit, color = COLOR_RED)
+
+def assign_attack(my_unit, target_unit):
+    if not target_unit or my_unit.isAttackFrame:
+        return
+    if my_unit.target:
+        if my_unit.target != target_unit:
+            my_unit.attack(target_unit)
+    else:
+        if not my_unit.orderTarget:
+            my_unit.attack(target_unit)
+        elif my_unit.orderTarget != target_unit:
+            my_unit.attack(target_unit)      
+
+def set_under_aim(my_units, target_units):
+    for unit in my_units:
+        unit.aim_by_units = []
+    for target_unit in target_units:
+        if target_unit.orderTarget:
+            target_unit.orderTarget.aim_by_units.append(target_unit)
+
+# not finish
+def keep_the_distance_between(my_unit, target_unit):
+    my_x, my_y = my_unit.position.x, my_unit.position.y
+    target_x, target_y = target_unit.position.x, target_unit.position.y
+    delta_x = my_x - target_x
+    delta_y = my_y - target_y
+    hypotenuse = math.sqrt(delta_x**2 + delta_y**2)
+    destination = Position(my_x + int(32 * delta_x / hypotenuse), my_y + int(32 * delta_y / hypotenuse))
+    my_unit.move(destination)
 
 def attack_neighboring_enemy(game, unit):
     enemys = UnitSet(game.getUnitsInRadius(unit.position, unit.type.groundWeapon.maxRange))
@@ -174,6 +278,38 @@ def build_injury_table(weapon_units, target_units, move_coef = 1):
             row.append(weapon_unit.type.groundWeapon.damageAmount - target_unit.type.armor)
         injury_table.append(row)
     return injury_table
+
+def build_move_cost_table(weapon_units, target_units):
+    move_cost_table = []
+    total_move_cost = 0
+    for weapon_unit in weapon_units:
+        row = []
+        for target_unit in target_units:
+            if weapon_unit.isInWeaponRange(target_unit):
+                row.append(0)
+                continue
+            if not target_unit.type.isFlyer:
+                if weapon_unit.type.groundWeapon.damageAmount == 0:
+                    row.append(8192)
+                else:
+                    move_distance = weapon_unit.getDistance(target_unit) - weapon_unit.type.groundWeapon.maxRange
+                    move_cost = int(math.ceil(move_distance / weapon_unit.type.topSpeed))
+                    total_move_cost += move_cost
+                    row.append(move_cost)
+            else:
+                if weapon_unit.type.airWeapon.damageAmount == 0:
+                    row.append(8192)
+                else:
+                    move_distance = weapon_unit.getDistance(target_unit) - weapon_unit.type.airWeapon.maxRange
+                    move_cost = int(math.ceil(move_distance / weapon_unit.type.topSpeed))
+                    total_move_cost += move_cost
+                    row.append(move_cost)
+        move_cost_table.append(row)
+
+    return move_cost_table, total_move_cost
+
+            
+
 
 def move_range_of(unit, weapon_type = 'ground', move_coef = 1):
     unit_type = unit.type

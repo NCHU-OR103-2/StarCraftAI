@@ -332,16 +332,37 @@ class BetaTestAI(object):
             return
         set_basic_information(self, self.game)
         initial_units_scan(self.me, scan_visible_enemy = True, game = self.game)
-        self.MOVE_COEF = 0.5
-        my_army = []
-        for key in self.me.units_dictionary.keys():
-            if key in self.me.unittype_set_army:
-                my_army += list(self.me.units_dictionary[key])
-        #self.game.printf('len(self.me.visible_enemy_units)' + str(len(self.me.visible_enemy_units)))
-        my_enemy = list(self.me.visible_enemy_units)
-        if len(my_army) > 0:
-            for unit in my_army:
-                draw_range_circle_on(self.game, unit, move_coef = self.MOVE_COEF)
+        self.MOVE_COEF = 1
+
+        #my_army = []
+        #for key in self.me.units_dictionary.keys():
+        #    if key in self.me.unittype_set_army:
+        #        my_army += list(self.me.units_dictionary[key])
+        #self.army = my_army
+        #my_enemy = list(self.me.visible_enemy_units)
+
+        #if len(my_army) > 0:
+        #    x, y = get_group_center_of(my_army)
+        #    my_army_center = (x, y)
+        #    self.game.drawCircleMap(x, y, 5, COLOR_CYAN)
+        #    self.game.drawCircleMap(x, y, 6, COLOR_CYAN)
+        #    for unit in my_army:
+        #        draw_range_circle_on(self.game, unit, move_coef = 0)
+        #        #draw_range_circle_on(self.game, unit, move_coef = self.MOVE_COEF)
+        #if len(my_enemy) > 0:
+        #    x, y = get_group_center_of(my_enemy)
+        #    my_enemy_center = (x, y)
+        #    self.game.drawCircleMap(x, y, 5, COLOR_MAGENTA)
+        #    self.game.drawCircleMap(x, y, 6, COLOR_MAGENTA)
+        #    for unit in my_enemy:
+        #        show_hitpoints_of(self.game, unit)
+        #if len(my_army) > 0 and len(my_enemy) > 0:
+        #    move_cost_table, total_move_cost = build_move_cost_table(my_army, my_enemy)
+        #    write_2D_table_in_file(move_cost_table, "opt_wta_move_cost_table.txt")
+        #    print(total_move_cost)
+        #if len(my_army) > 0:
+        #    for unit in my_army:
+        #        draw_range_circle_on(self.game, unit, move_coef = self.MOVE_COEF)
         #self.game.printf('len(my_army) = ' + str(len(my_army)))
         #self.game.printf('len(my_army) = ' + str(len(my_enemy)))
         #opt_wta(my_army, my_enemy, move_coef = self.MOVE_COEF, game = self.game)
@@ -353,24 +374,33 @@ class BetaTestAI(object):
 
     def onMatchFrame(self):
         frame_count = self.game.frameCount
-        #self.game.printf(str(frame_count))
+        #self.game.printf('\x02 ---- Frame Count : ' + str(frame_count) + ' ----')
         my_army = []
         for key in self.me.units_dictionary.keys():
             if key in self.me.unittype_set_army:
                 my_army += list(self.me.units_dictionary[key])
-        self.army = my_army
+        self.my_army = my_army
         my_enemy = list(self.me.visible_enemy_units)
 
-        #if len(my_army) > 0:
-        #    for unit in my_army:
-        #        draw_range_circle_on(self.game, unit, move_coef = self.MOVE_COEF)
+        if len(my_army) > 0:
+            x, y = get_group_center_of(my_army)
+            my_army_center = (x, y)
+            self.game.drawCircleMap(x, y, 5, COLOR_CYAN)
+            self.game.drawCircleMap(x, y, 6, COLOR_CYAN)
+            for unit in my_army:
+                draw_range_circle_on(self.game, unit, move_coef = self.MOVE_COEF)
         if len(my_enemy) > 0:
+            x, y = get_group_center_of(my_enemy)
+            my_enemy_center = (x, y)
+            self.game.drawCircleMap(x, y, 5, COLOR_MAGENTA)
+            self.game.drawCircleMap(x, y, 6, COLOR_MAGENTA)
             for unit in my_enemy:
                 show_hitpoints_of(self.game, unit)
         if len(my_army) > 0 and len(my_enemy) > 0:
             #target_list = quick_wta(my_army, my_enemy, move_coef = self.MOVE_COEF)
             target_list = opt_wta(my_army, my_enemy, move_coef = self.MOVE_COEF, game = self.game)
-            start_attack(self.game, my_army, target_list, draw_line_game = True) 
+            #set_under_aim(my_army, my_enemy)
+            start_attack(self.game, my_army, target_list, draw_line_game = True, my_center = my_army_center, enemy_center = my_enemy_center) 
 
     def onUnitDestroy(self, unit):
         #self.game.printf('Unit destroy : ' + unit.type.name)

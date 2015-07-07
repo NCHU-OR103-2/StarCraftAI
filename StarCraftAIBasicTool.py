@@ -50,6 +50,14 @@ def clear_up_death_unit(units_set, is_tuple=False):
 def get_distance_of(unit1, unit2):
     return unit1.position.getDistance(unit2.position)
 
+def get_group_center_of(unitset):
+    total_x, total_y, total_n = 0, 0, 0
+    for unit in unitset:
+        total_x += unit.position.x
+        total_y += unit.position.y
+        total_n += 1
+    return total_x / total_n, total_y / total_n
+
 
 def build_unittype_dictionary(player):
     if player.race == Terran:

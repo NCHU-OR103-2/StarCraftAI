@@ -23,6 +23,8 @@ def draw_range_circle_on(game, unit, weapon_type = 'ground', move_coef = 0):
         game.drawCircleMap(x, y, int(math.ceil(fire_range)), COLOR_DEEP_PINK) 
 
 def draw_line_between(game, unit_1, unit_2, color = Color(0, 0, 0)):
+    if not unit_1 or not unit_2:
+        return
     x_1, y_1 = unit_1.position.x, unit_1.position.y
     x_2, y_2 = unit_2.position.x, unit_2.position.y
     game.drawLineMap(x_1, y_1, x_2, y_2, color)
@@ -43,6 +45,15 @@ def show_hitpoints_of(game, unit):
     else:
         text = '\x08' + str(hp)
     game.drawTextMap(x, y, text)
+
+def show_cooldown_of(game, unit, weapon_type = "ground"):
+    x = unit.left - 5
+    y = unit.bottom
+    if weapon_type == "ground":
+        cooldown = '\x1F ' + str(unit.groundWeaponCooldown)
+    else:
+        cooldown = '\x1F ' + str(unit.airWeaponCooldown)
+    game.drawTextMap(x, y, cooldown)
 
 def print_unittype_in(units_set):
     for unit in units_set:
@@ -74,7 +85,12 @@ def write_dataset_in_pickle_file(dataset, file_name):
         pickle.dump(data, my_file)
     my_file.close()
 
-COLOR_YELLOW = Color(255, 255, 0)
+
 COLOR_RED = Color(255, 0, 0)
 COLOR_GREEN = Color(0, 255, 0)
+COLOR_BLUE = Color(0, 0, 255)
+COLOR_YELLOW = Color(255, 255, 0)
+COLOR_MAGENTA = Color(255, 0, 255)
+COLOR_CYAN = Color(0, 255, 255)
+COLOR_WHITE = Color(255, 255, 255)
 COLOR_DEEP_PINK = Color(255, 20, 147)
