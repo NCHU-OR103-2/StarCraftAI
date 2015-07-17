@@ -9,8 +9,8 @@ from StarCraftAIDevelopTool import *
 from StarCraftAIBasicTool import *
 
 # Start Attack Configure
-RETREAT_HP_RATIO = 0.5
-STRICT_RETREAT_HP_RATIO = 0.25
+RETREAT_HP_RATIO = 0.7
+STRICT_RETREAT_HP_RATIO = 0.5
 STRICT_MOVING_FIRE_LEVEL = 32 * 1.5
 
 ##### Start Attack #####################################################################################################

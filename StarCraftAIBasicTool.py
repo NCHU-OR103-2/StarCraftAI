@@ -1,20 +1,6 @@
 from pybw_swig import * # import all constants and classes
 import pybw
 
-def initial_units_scan(player, scan_visible_enemy = False, game = None):
-    for unit_type in player.unittype_set:
-        player.units_dictionary[unit_type] = set()
-    if not scan_visible_enemy:
-        for unit in player.units:
-            player.units_dictionary[unit.type].add(unit)
-    else:
-        player.visible_enemy_units.clear()
-        for unit in game.allUnits:
-            if unit.player == player:
-                player.units_dictionary[unit.type].add(unit)
-            elif unit.player == player.enemy:
-                player.visible_enemy_units.add(unit)
-
 def set_basic_information(ai, game):
     ai.me = game.self
     ai.race = game.self.race    
@@ -29,12 +15,19 @@ def set_basic_information(ai, game):
     ai.me.visible_enemy_units = set()
     ai.army = []
 
-def get_specify_unittype(units_set, unittype):
-    specify_units = []
-    for unit in units_set:
-        if unit.type.name == unittype:
-            specify_units.append(unit)
-    return specify_units
+def initial_units_scan(player, scan_visible_enemy = False, game = None):
+    for unit_type in player.unittype_set:
+        player.units_dictionary[unit_type] = set()
+    if not scan_visible_enemy:
+        for unit in player.units:
+            player.units_dictionary[unit.type].add(unit)
+    else:
+        player.visible_enemy_units.clear()
+        for unit in game.allUnits:
+            if unit.player == player:
+                player.units_dictionary[unit.type].add(unit)
+            elif unit.player == player.enemy:
+                player.visible_enemy_units.add(unit)
 
 def clear_up_death_unit(units_set, is_tuple=False):
     if len(units_set) == 0:
@@ -47,6 +40,13 @@ def clear_up_death_unit(units_set, is_tuple=False):
         if not unit.exists:
             units_set.remove(item)
 
+def get_specify_unittype(units_set, unittype):
+    specify_units = []
+    for unit in units_set:
+        if unit.type.name == unittype:
+            specify_units.append(unit)
+    return specify_units
+
 def get_distance_of(unit1, unit2):
     return unit1.position.getDistance(unit2.position)
 
@@ -58,8 +58,8 @@ def get_group_center_of(unitset):
         total_n += 1
     return total_x / total_n, total_y / total_n
 
-def is_escape(unit):
-    return not unit.orderTarget and unit.isMoving
+#def is_escape(unit):
+#    return not unit.orderTarget and unit.isMoving
 
 def is_near_cooldown(unit, weapon_type):
     if weapon_type == "ground":

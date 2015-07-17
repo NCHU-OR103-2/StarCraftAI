@@ -303,17 +303,16 @@ consoleManager = ConsoleManagerThreaded()
 event_handler.listeners.append( consoleManager )
 
 try:
-    import kai7ai
-    import TestAI
-    import ErrorTestAI
-    import FunctionTestAI
+    #import KaisevenAI
+    #import ErrorTestAI
+    #import FunctionTestAI
 
-    #event_handler.listeners.append( kai7ai.zerg_FastBreakAI() )
-    #event_handler.listeners.append( kai7ai.AlphaTestAI() )
-    #event_handler.listeners.append( kai7ai.BetaTestAI() )
+    #event_handler.listeners.append( KaisevenAI.zerg_FastBreakAI() )
+    #event_handler.listeners.append( KaisevenAI.AlphaTestAI() )
+    #event_handler.listeners.append( KaisevenAI.BetaTestAI() )
     #event_handler.listeners.append( ErrorTestAI.Sample() )
     #event_handler.listeners.append( ErrorTestAI.GetNeighboringEnemys() )
-    event_handler.listeners.append( FunctionTestAI.Battle() )
+    #event_handler.listeners.append( FunctionTestAI.Battle() )
 
     #import erezai.main
     #event_handler.listeners.append( erezai.main.ErezAI() )

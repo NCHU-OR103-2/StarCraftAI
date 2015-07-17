@@ -1,25 +1,141 @@
-# 作業研究專題：StarCraft： brood war AI #
+作業研究專題 StarCraft：brood war AI 
+======================================
 
-未來會考慮將不同作者撰寫的 module 分開編成各自的 package，
-然後 Tool 類的 module，會自成一個 package。
+- [Intro](#intro)
+- [Usage](#usage)
+    - [Main Modules](#main-modules)
+    - [Sub Modules](#sub-modules)
+- [Modules](#modules)
+    - [KaisevenAI](#kaisevenai)
+    - [FunctionTestAI](#functiontestai)
+    - [ErrorTestAI](#errortestai)
+    - [KaisevenOptimizeSC](#kaisevenoptimizesc)
+    - [KaisevenControlSC](#kaisevencontrolsc)
+    - [StarCraftAIBasicTool](#starcraftaibasictool)
+    - [StarCraftAIDevelopTool](#starcraftaideveloptool)
 
-### StarCraftAIBasicTool.py ###
-基本的 AI 程式工具，
-大部份 AI 都可以使用或者經常使用到的簡單程式。
+Intro
+-----
+此 Project 目標為設計一個 StarCraft 的 AI，依據遊戲中不同的狀況，建立數學模型與演算法，盡可能的最佳化遊戲。
 
-### StarCraftAIDevelopTool.py ###
-開發 AI 可以使用的 Debug 工具。
+Usage
+-----
+    
+#### Main Modules
+制定 AI 演算法的模組。屬於 Main Modules 的有下列模組 :
 
-### kai7ai.py ###
-這份 module 會被 `pybw.py` import 進來。  
-其中包含了：  
-1.  zerg_FastBreakAI , 簡易蟲族快攻 AI  
-2.  TestAI, 單純做測試用
+- KaisevenAI
+- FunctionTestAI
+- ErrorTestAI
 
-### KaisevenOptimizeSC.py ###
-用來做最佳化的工具，也是本專題的主要角色。  
-method XXX_wta(weapon_units, target_units) 是用來做最佳化武器分配的主要程式。  
-1.  opt_wta ，尚未完成，還有許多地方需要進行測試 (趕工中...)  
-2.  quick_wta ，一個非常簡單的演算法實作分配武器目標，  
-    想法：各個單位在周圍一定距離的範圍內，尋找剩餘血量最少的目標攻擊。  
-    雖然目前尚存在一些 bug，但基本上還是可以 work 得不錯的。  
+Main Modules 下會制定各種 AI 的 class。
+
+    class SomeAI(object):
+        def __init__(self):
+            pybw.consoleManager.locals.update({'k': self})
+
+        def onConnect(self):
+            self.game = getGame() 
+
+        def onMatchStart(self):
+            if self.game.isReplay:
+                return
+            do something ...
+
+        def onMatchFrame(self):
+            do something ...
+
+若是想使用某 Main Modules 下的 某個 AI class，只需要修改 `pybw.py` 中的部分內容即可。  
+例如：想要啟用 SomeMainModule_2 下的 SomeAI_1 的話，只需要將 `pybw.py` 下的 `import SomeMainModule_2` 與 `event ... ( SomeMainModule_2.SomeAI_1() )` 的註解取消掉即可。
+
+![amend_pybw_example](http://i.imgur.com/n8IY84t.gif)
+
+> ##### Note：
+> 1.    在 import Main Modules 時，只能 import 其中一個 module，若同時 import 多種 Main Modules 將導致 AI 無法正常運作。
+> 
+> 2.    FunctionTestAI 與 ErrorTestAI 通常需要在特定的 map 下才能正常運作，尤其是 ErrorTestAI。特定的 map 名稱與該測試 AI 名稱相同，且會放在 FunctionTestMaps 或 ErrorTestMaps 目錄中。例如：ErrorTestAI 下的 AI, TestSome, 對應的 map 名稱為 TestSome.scm 或 TestSome.scx。
+
+#### Sub Modules
+輔助 Main Module 的模組。屬於 Sub Modules 的有下列模組 :
+
+- KaisevenOptimizeSC
+- KaisevenControlSC
+- StarCraftAIBasicTool
+- StarCraftAIDevelopTool
+
+Modules
+-------
+
+#### KaisevenAI ( 待修改 ... )
+主導整個遊戲策略與流程的 AI。  
+目前只有 zerg_FastBreakAI 可以運行。  
+
+- zerg_FastBreakAI : 簡易蟲族快攻
+
+#### FunctionTestAI
+用以測試部分 function 運作狀況的 AI
+
+#### ErrorTestAI
+用以測試意料之外 function 的 AI
+
+#### KaisevenOptimizeSC
+計算遊戲策略的工具，撰寫決策方法或最佳化演算法，與其附屬 function。
+
+- Major function
+    - opt_wta
+    - quick_wta
+- Subsidiary function
+    - build_damage_table
+    - build_hitpoints_table
+    - build_injury_table
+    - build_max_injury_table
+    - build_move_cost_table
+
+#### KaisevenControlSC
+控制遊戲行為的工具，撰寫控制遊戲單位動作的演算法，與其附屬 function。
+
+- Major function
+    - start_attack
+- Subsidiary function
+    - moving_fire_case_escape_neardeath
+    - moving_fire_case_escape_dangerous
+    - moving_fire_case_escape_energetic
+    - moving_fire_case_assault_neardeath
+    - moving_fire_case_assault_dangerous
+    - moving_fire_case_assault_energetic
+    - moving_fire_case_attack_neardeath
+    - moving_fire_case_attack_dangerous
+    - moving_fire_case_attack_energetic
+
+#### StarCraftAIBasicTool
+基本 AI 工具，撰寫大部份 AI 都可以使用或者經常使用到的簡單演算法，與其附屬 function。
+
+- Major function
+    - set_basic_information
+    - initial_units_scan
+    - clear_up_death_unit
+    - get_specify_unittype
+    - get_distance_of ( 待修改 ... )
+    - get_group_center_of
+    - is_near_cooldown ( 待修改 ... )
+    - weapon_range_diff ( 待修改 ... )
+- Subsidiary function
+    - build_unittype_dictionary
+
+#### StarCraftAIDevelopTool
+開發 AI 工具，撰寫方便用來 Debug function。
+
+- Output to game
+    - draw_circle_on
+    - draw_range_circle_on
+    - draw_line_between
+    - draw_box_on
+    - draw_text_on
+    - show_hitpoints_of
+    - show_cooldown_of
+    - show_unit_status
+- Output to file ( 待修改 ... )
+    - write_2D_table_in_file
+    - write_1D_table_in_file
+    - write_data_in_pickle_file
+    - write_dataset_in_pickle_file

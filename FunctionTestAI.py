@@ -71,6 +71,7 @@ class Battle(object):
     def __init__(self):
         # Add ourselves to the console manager as variable "k"
         pybw.consoleManager.locals.update({'k': self})
+        self.MOVE_COEF = 1
 
     def onConnect(self):
         # Get the game instance
@@ -81,7 +82,7 @@ class Battle(object):
             return
         set_basic_information(self, self.game)
         initial_units_scan(self.me, scan_visible_enemy = True, game = self.game)
-        self.MOVE_COEF = 1
+        
 
     def onSendText(self, message):
         self.message = message

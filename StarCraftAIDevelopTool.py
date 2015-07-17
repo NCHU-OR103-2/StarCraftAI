@@ -33,6 +33,16 @@ def draw_line_between(game, unit_1, unit_2, color = Color(0, 0, 0)):
 def draw_box_on(game, unit, color = Color(0, 0, 0)):
     game.drawBoxMap(unit.left, unit.top, unit.right, unit.bottom, color)
 
+def draw_text_on(game, unit, text):
+    origin_x = unit.position.x - 32 * 3
+    origin_y = unit.position.y - 16
+    if isinstance(text, list):
+        for t in text:
+            game.drawTextMap(origin_x, origin_y, t)
+            origin_y += 12
+    else:
+        game.drawTextMap(origin_x, origin_y, text)
+
 def show_hitpoints_of(game, unit):
     x = unit.right
     y = unit.bottom
@@ -55,16 +65,6 @@ def show_cooldown_of(game, unit, weapon_type = "ground"):
     else:
         cooldown = '\x1F ' + str(unit.airWeaponCooldown)
     game.drawTextMap(x, y, cooldown)
-
-def draw_text_on(game, unit, text):
-    origin_x = unit.position.x - 32 * 3
-    origin_y = unit.position.y - 16
-    if isinstance(text, list):
-        for t in text:
-            game.drawTextMap(origin_x, origin_y, t)
-            origin_y += 12
-    else:
-        game.drawTextMap(origin_x, origin_y, text)
 
 def show_unit_status(game, unit, target_unit = None):
     origin_x = unit.position.x - 32 * 3
