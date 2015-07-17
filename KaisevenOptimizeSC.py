@@ -10,45 +10,27 @@ import cvxpy as cvx
 from StarCraftAIDevelopTool import *
 from StarCraftAIBasicTool import *
 
-## Create two scalar optimization variables.
-#x = cvx.Variable()
-#y = cvx.Variable()
-#
-## Create two constraints.
-#constraints = [x + y == 1,
-#               x - y >= 1]
-#
-## Form objective.
-#obj = cvx.Minimize(cvx.square(x - y))
-#
-## Form and solve problem.
-#prob = cvx.Problem(obj, constraints)
-#prob.solve()  # Returns the optimal value.
-#print "status:", prob.status
-#print "optimal value", prob.value
-#print "optimal var", x.value, y.value
-
-# finish
 def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
     start_time = time.time()
 
-    damage_table = build_damage_table(target_units)
-    #ai.damage_table = damage_table
-    #game.printf('len(damage_table) = ' + str(len(damage_table)))
+    ### Set parameter
+    WASTE_DAMAGE_COEF = 1.2
+    REMAIN_DAMAGE_RATIO = 0.05
+    ### Remark
+    # Part 2: distence concept, in Build objective function, need more discuss ...
+
+    ### Build information table
+    damage_table, remain_damage_point = build_damage_table(target_units)
     hitpoints_table = build_hitpoints_table(target_units)
     injury_table = build_injury_table(weapon_units, target_units, move_coef = move_coef)
-    #ai.injury_table = injury_table
-    #game.printf('len(injury_table) = ' + str(len(injury_table)))
+    max_injury_table = build_max_injury_table(weapon_units, target_units, injury_table)
     move_cost_table, total_move_cost = build_move_cost_table(weapon_units, target_units)
-    #write_1D_table_in_file(damage_table, "opt_wta_damage_table.txt")
-    #write_2D_table_in_file(injury_table, "opt_wta_injury_table.txt")
-    write_2D_table_in_file(injury_table, "opt_wta_move_cost_table.txt")
-    #write_data_in_pickle_file(damage_table, 'dt.pkl')
-    #write_data_in_pickle_file(injury_table, 'it.pkl')
-    #write_data_in_pickle_file(hitpoints_table, 'ht.pkl')
+    
     m, n = len(weapon_units), len(target_units)
     X = cvx.Bool(m, n)
 
+    ### Build objective function
+    # Part 1: damage concept
     tmp_func = hitpoints_table[0] - injury_table[0][0] * X[0, 0]
     for i in range(1, m):
         tmp_func  = tmp_func - injury_table[i][0] * X[i, 0]
@@ -58,14 +40,14 @@ def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
         for i in range(1, m):
             tmp_func  = tmp_func - injury_table[i][j] * X[i, j]
         obj_func = obj_func + damage_table[j] / (target_units[j].hitPoints * target_units[j].type.maxHitPoints) * tmp_func
-    
+    # Part 2: distence concept
     if total_move_cost > 0:
         for i in range(1, m):
             for j in range(1, n):
-                obj_func = obj_func + X[i, j] * (move_cost_table[i][j] / total_move_cost)**2
-    
+                obj_func = obj_func + remain_damage_point * REMAIN_DAMAGE_RATIO * X[i, j] * (move_cost_table[i][j] / total_move_cost)**2
     obj_func = cvx.Minimize(obj_func)
     
+    ### Build constraints
     cons = []
     for i in range(m):
         tmp_cons = X[i, 0]
@@ -73,58 +55,34 @@ def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
             tmp_cons = tmp_cons + X[i, j]
         tmp_cons = tmp_cons <= 1
         cons.append(tmp_cons)
-
-    mT = []
-    for j in range(n):
-        min_value = float('inf')
-        for i in range(m):
-            if injury_table[i][j] != 0 and injury_table[i][j] < min_value:
-                min_value = injury_table[i][j]
-        if min_value == float('inf'):
-            mT.append(0)
-        else:
-            mT.append(min_value)
     
-    some_coef = 1.2
     for j in range(n):
         tmp_cons = injury_table[0][j] * X[0, j]
         for i in range(1, m):
             tmp_cons  = tmp_cons + injury_table[i][j] * X[i, j]
-        tmp_cons = tmp_cons <= hitpoints_table[j] + some_coef * mT[j]
+        tmp_cons = tmp_cons <= hitpoints_table[j] + WASTE_DAMAGE_COEF * max_injury_table[j]
         cons.append(tmp_cons)
     
+    ### Start compute
     prob = cvx.Problem(obj_func, cons)
     prob.solve()
-    
-    #R = []
-    #for i in range(m):
-    #    r = []
-    #    for j in range(n):
-    #        if X[i, j].value < 0.1:
-    #            r.append(0)
-    #        else:
-    #            r.append(1)
-    #    R.append(r)
-    #write_2D_table_in_file(R, "opt_result_table.txt")
 
+    ### Build result
     target_of_weapon = []
-    #opt_wta_table = []
     for i in range(m):
         target_of_weapon.append(None)
-        #opt_wta_table.append(None)
         for j in range(n):
             if X[i, j].value > 0.1:
                 target_of_weapon[i] = target_units[j]
-                #opt_wta_table[i] = j
                 break
         if not target_of_weapon[i]:
             target_of_weapon[i] = target_units[0]
-            #opt_wta_table[i] = 0
-    #write_1D_table_in_file(opt_wta_table, "opt_wta_table.txt")
     print("--- %s seconds ---" % (time.time() - start_time))
+    #game.printf("\x04 ---------------------------")
+    #game.printf("\x10 Minimize : " + str(prob.value))
+    #game.printf("\x1E R.D.P    : " + str(remain_damage_point))
     return target_of_weapon
 
-# finish
 def quick_wta(weapon_units, target_units, move_coef = 1, init_counter = 6):
     target_of_weapon = []
     for unit in weapon_units:
@@ -144,105 +102,15 @@ def quick_wta(weapon_units, target_units, move_coef = 1, init_counter = 6):
         target_of_weapon.append(target_unit)
     return target_of_weapon
 
-def start_attack(game, units, target_of_units, draw_line_game = False, moving_fire = None, my_center = None, enemy_center = None):
-    if not moving_fire:
-        for unit, target_unit in zip(units, target_of_units):
-            if not target_unit or unit.isAttackFrame:
-                continue
-            if unit.target:
-                if unit.target != target_unit:
-                    unit.attack(target_unit)
-                    #unit.rightClick(target_unit)
-            else:
-                if not unit.orderTarget:
-                    unit.attack(target_unit)
-                    #unit.rightClick(target_unit)
-                elif unit.orderTarget != target_unit:
-                    unit.attack(target_unit)
-                    #unit.rightClick(target_unit)
-    else:
-        retreat_hp_ratio = 0.3
-        delta_x = my_center[0] - enemy_center[0]
-        delta_y = my_center[1] - enemy_center[1]
-        hypotenuse = math.sqrt(delta_x**2 + delta_y**2)
-
-        for unit, target_unit in zip(units, target_of_units):
-            if not target_unit or unit.isAttackFrame:
-                continue
-            target_is_flyer = target_unit.type.isFlyer
-            if not target_is_flyer:
-                cooldown = unit.groundWeaponCooldown
-                max_range = unit.groundWeapon.maxRange
-            else:
-                cooldown = unit.airWeaponCooldown
-                max_range = unit.airWeapon.maxRange
-            target_max_range = target_unit.groundWeapon.maxRange
-            residue_hp_ratio = unit.hitPoints / unit.type.maxHitPoints
-            x, y = unit.position.x, unit.position.y
-
-            if unit.isMoving:
-                if residue_hp_ratio <= retreat_hp_ratio and len(unit.aim_by_units) != 0:
-                    if unit.target:
-                        destination = Position(x + int(32 * delta_x / hypotenuse), y + int(32 * delta_y / hypotenuse))
-                        unit.move(destination)
-                elif residue_hp_ratio > retreat_hp_ratio and len(unit.aim_by_units) != 0:
-                    if max_range > target_max_range:
-                        pass
-                    else:
-                        pass
-                elif residue_hp_ratio <= retreat_hp_ratio and len(unit.aim_by_units) == 0:
-                    if unit.target:
-                        if unit.target != target_unit:
-                            unit.attack(target_unit)
-                            continue
-                    if not unit.orderTarget:
-                        unit.attack(target_unit)
-                    elif unit.orderTarget != target_unit:
-                        unit.attack(target_unit)
-                elif residue_hp_ratio > retreat_hp_ratio and len(unit.aim_by_units) == 0:
-                    if not unit.orderTarget:
-                        unit.attack(target_unit)
-                    elif unit.orderTarget != target_unit:
-                        unit.attack(target_unit)
-
-            else:
-                if residue_hp_ratio <= retreat_hp_ratio and unit.isUnderAttack:
-                    if unit.target or unit.orderTarget:
-                        destination = Position(x + int(32 * delta_x / hypotenuse), y + int(32 * delta_y / hypotenuse))
-                        unit.move(destination)
-                elif residue_hp_ratio > retreat_hp_ratio and unit.isUnderAttack:
-                    pass
-                elif residue_hp_ratio <= retreat_hp_ratio and not unit.isUnderAttack:
-                    if not unit.orderTarget:
-                        unit.attack(target_unit)
-                    elif unit.orderTarget != target_unit:
-                        unit.attack(target_unit)
-                elif residue_hp_ratio > retreat_hp_ratio and not unit.isUnderAttack:
-                    pass 
-    if draw_line_game:
-        for unit, target_unit in zip(units, target_of_units):
-            if not target_unit:
-                continue
-            draw_line_between(game, unit, target_unit, color = COLOR_RED)
-
-def assign_attack(my_unit, target_unit):
-    if not target_unit or my_unit.isAttackFrame:
-        return
-    if my_unit.target:
-        if my_unit.target != target_unit:
-            my_unit.attack(target_unit)
-    else:
-        if not my_unit.orderTarget:
-            my_unit.attack(target_unit)
-        elif my_unit.orderTarget != target_unit:
-            my_unit.attack(target_unit)      
-
-def set_under_aim(my_units, target_units):
-    for unit in my_units:
-        unit.aim_by_units = []
+def build_under_aim_table(my_units, target_units):
+    under_aim_table = {}
+    for my_unit in my_units:
+        under_aim_table[my_unit] = False
     for target_unit in target_units:
         if target_unit.orderTarget:
-            target_unit.orderTarget.aim_by_units.append(target_unit)
+            under_aim_table[target_unit.orderTarget] = True
+
+    return under_aim_table
 
 # not finish
 def keep_the_distance_between(my_unit, target_unit):
@@ -254,18 +122,22 @@ def keep_the_distance_between(my_unit, target_unit):
     destination = Position(my_x + int(32 * delta_x / hypotenuse), my_y + int(32 * delta_y / hypotenuse))
     my_unit.move(destination)
 
+# not finish
 def attack_neighboring_enemy(game, unit):
     enemys = UnitSet(game.getUnitsInRadius(unit.position, unit.type.groundWeapon.maxRange))
 
-
-# not debug
 def build_damage_table(target_units):
-    return [target_unit.type.groundWeapon.damageAmount/target_unit.type.groundWeapon.damageCooldown for target_unit in target_units]
+    damage_table = []
+    remain_damage_point = 0.0
+    for target_unit in target_units:
+        damage = target_unit.type.groundWeapon.damageAmount/target_unit.type.groundWeapon.damageCooldown
+        damage_table.append(damage)
+        remain_damage_point += damage * target_unit.hitPoints / target_unit.type.maxHitPoints
+    return damage_table, remain_damage_point
 
 def build_hitpoints_table(target_units):
     return [target_unit.hitPoints for target_unit in target_units]
 
-# not debug
 def build_injury_table(weapon_units, target_units, move_coef = 1):
     injury_table = []
     for m, weapon_unit in enumerate(weapon_units):
@@ -278,6 +150,20 @@ def build_injury_table(weapon_units, target_units, move_coef = 1):
             row.append(weapon_unit.type.groundWeapon.damageAmount - target_unit.type.armor)
         injury_table.append(row)
     return injury_table
+
+def build_max_injury_table(weapon_units, target_units, injury_table):
+    m, n = len(weapon_units), len(target_units)
+    max_injury_table = []
+    for j in range(n):
+        min_value = float('inf')
+        for i in range(m):
+            if injury_table[i][j] != 0 and injury_table[i][j] < min_value:
+                min_value = injury_table[i][j]
+        if min_value == float('inf'):
+            max_injury_table.append(0)
+        else:
+            max_injury_table.append(min_value)
+    return max_injury_table
 
 def build_move_cost_table(weapon_units, target_units):
     move_cost_table = []
@@ -307,9 +193,6 @@ def build_move_cost_table(weapon_units, target_units):
         move_cost_table.append(row)
 
     return move_cost_table, total_move_cost
-
-            
-
 
 def move_range_of(unit, weapon_type = 'ground', move_coef = 1):
     unit_type = unit.type

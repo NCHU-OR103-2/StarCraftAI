@@ -58,6 +58,19 @@ def get_group_center_of(unitset):
         total_n += 1
     return total_x / total_n, total_y / total_n
 
+def is_escape(unit):
+    return not unit.orderTarget and unit.isMoving
+
+def is_near_cooldown(unit, weapon_type):
+    if weapon_type == "ground":
+        return unit.groundWeaponCooldown <= 10
+    else:
+        return unit.airWeaponCooldown <= 10
+
+def weapon_range_diff(unit_1, unit_2):
+    unit_1_weapon_range = unit_1.type.airWeapon.maxRange if unit_2.type.isFlyer else unit_1.type.groundWeapon.maxRange
+    unit_2_weapon_range = unit_2.type.airWeapon.maxRange if unit_1.type.isFlyer else unit_2.type.groundWeapon.maxRange
+    return unit_1_weapon_range - unit_2_weapon_range
 
 def build_unittype_dictionary(player):
     if player.race == Terran:

@@ -2,11 +2,10 @@ from pybw_swig import * # import all constants and classes
 import pybw
 import math
 
-#import KaisevenOptimizeSC as k7opt
 from KaisevenOptimizeSC import *
+from KaisevenControlSC import *
 from StarCraftAIDevelopTool import *
 from StarCraftAIBasicTool import *
-#import cvxpy
 
 class zerg_FastBreakAI(object):
     def __init__(self):

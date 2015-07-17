@@ -2,6 +2,7 @@ from __future__ import division
 
 from pybw_swig import * # import all constants and classes
 import pybw
+from StarCraftAIBasicTool import *
 import math
 import pickle
 
@@ -54,6 +55,59 @@ def show_cooldown_of(game, unit, weapon_type = "ground"):
     else:
         cooldown = '\x1F ' + str(unit.airWeaponCooldown)
     game.drawTextMap(x, y, cooldown)
+
+def draw_text_on(game, unit, text):
+    origin_x = unit.position.x - 32 * 3
+    origin_y = unit.position.y - 16
+    if isinstance(text, list):
+        for t in text:
+            game.drawTextMap(origin_x, origin_y, t)
+            origin_y += 12
+    else:
+        game.drawTextMap(origin_x, origin_y, text)
+
+def show_unit_status(game, unit, target_unit = None):
+    origin_x = unit.position.x - 32 * 3
+    origin_y = unit.position.y - 16
+    # ---- version 1 ----
+    #if unit.isIdle:
+    #    game.drawTextMap(origin_x, origin_y, "\x05 Idle ...")
+    #    origin_y += 12
+    #if unit.isMoving:
+    #    game.drawTextMap(origin_x, origin_y, "\x19 Moving")
+    #    origin_y += 12
+    #if unit.orderTarget:
+    #    game.drawTextMap(origin_x, origin_y, "\x07 has OrderTarget")
+    #    origin_y += 12
+    #if unit.target:
+    #    game.drawTextMap(origin_x, origin_y, "\x18 has Target")
+    #    origin_y += 12
+    #if is_escape(unit):
+    #    game.drawTextMap(origin_x, origin_y, "\x11 escape !")
+    #    origin_y += 12
+    #if unit.isAttackFrame:
+    #    game.drawTextMap(origin_x, origin_y, "\x08 attacking ")
+    #    origin_y += 12
+    #if unit.groundWeaponCooldown >= 1:
+    #    game.drawTextMap(origin_x, origin_y, "\x1F wait cooldown ")
+    #    origin_y += 12
+    
+    # ---- version 2 ----
+    if target_unit:
+        if not unit.orderTarget:
+            game.drawTextMap(origin_x, origin_y, "\x07 not have OrderTarget")
+            origin_y += 12
+        elif unit.isMoving:
+            game.drawTextMap(origin_x, origin_y, "\x19 Moving")
+            origin_y += 12
+        elif unit.isInWeaponRange(target_unit):
+            game.drawTextMap(origin_x, origin_y, "\x08 in weaponrange ")
+            origin_y += 12
+        else:
+            pass
+
+    if origin_y == unit.position.y - 16:
+        game.drawTextMap(origin_x, origin_y, "\x04 -- unknow status --")
 
 def print_unittype_in(units_set):
     for unit in units_set:
