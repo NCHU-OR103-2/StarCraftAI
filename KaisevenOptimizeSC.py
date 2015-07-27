@@ -42,10 +42,10 @@ def opt_wta_step_1(weapon_units, target_units, ai):
             tmp_func  = tmp_func - injury_table[i][j] * X[i, j]
         obj_func = obj_func + damage_table[j] / (target_units[j].hitPoints * target_units[j].type.maxHitPoints) * tmp_func
     # Part 2: distence concept
-    if total_move_cost > 0:
-        for i in range(1, m):
-            for j in range(1, n):
-                obj_func = obj_func + remain_damage_point * REMAIN_DAMAGE_RATIO * X[i, j] * (move_cost_table[i][j] / total_move_cost)**2
+    #if total_move_cost > 0:
+    #    for i in range(1, m):
+    #        for j in range(1, n):
+    #            obj_func = obj_func + remain_damage_point * REMAIN_DAMAGE_RATIO * X[i, j] * (move_cost_table[i][j] / total_move_cost)**2
     obj_func = cvx.Minimize(obj_func)
     
     ### Build constraints
