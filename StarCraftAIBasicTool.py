@@ -20,14 +20,23 @@ def initial_units_scan(player, scan_visible_enemy = False, game = None):
         player.units_dictionary[unit_type] = set()
     if not scan_visible_enemy:
         for unit in player.units:
-            player.units_dictionary[unit.type].add(unit)
+            try:
+                player.units_dictionary[unit.type].add(unit)
+            except KeyError:
+                pass
     else:
         player.visible_enemy_units.clear()
         for unit in game.allUnits:
             if unit.player == player:
-                player.units_dictionary[unit.type].add(unit)
+                try:
+                    player.units_dictionary[unit.type].add(unit)
+                except KeyError:
+                    pass
             elif unit.player == player.enemy:
-                player.visible_enemy_units.add(unit)
+                try:
+                    player.visible_enemy_units.add(unit)
+                except KeyError:
+                    pass
 
 def clear_up_death_unit(units_set, is_tuple=False):
     if len(units_set) == 0:

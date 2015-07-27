@@ -113,6 +113,26 @@ def print_unittype_in(units_set):
     for unit in units_set:
         print(unit.type.name)
 
+def write_data_in_file(data, file_name, title = None):
+    my_file = open(file_name, "w")
+    if isinstance(data, list):
+        for item in data:
+            if isinstance(item, list):
+                for element in item:
+                    my_file.write("{0:>12f}".format(element))
+                my_file.write("\n")
+            else:
+                my_file.write("{0:>12f}".format(item))
+    elif isinstance(data, dict):
+        for key, value in data.iteritems():
+            my_file.write("{0:>12}".format(str(key)))
+            if isinstance(value, list):
+                for element in value:
+                    my_file.write("{0:>12}".format(element))
+            my_file.write("\n")
+    my_file.write("\n")
+    my_file.close()
+
 def write_2D_table_in_file(table, file_name, title = None):
     my_file = open(file_name, "w")
     for row in table:
@@ -130,15 +150,12 @@ def write_1D_table_in_file(table, file_name, title = None):
 
 def write_data_in_pickle_file(data, file_name):
     my_file = open(file_name, 'w')
-    pickle.dump(data, my_file)
-    my_file.close()
-
-def write_dataset_in_pickle_file(dataset, file_name):
-    my_file = open(file_name, 'w')
-    for data in dataset:
+    try:
+        for sub_data in data:
+            pickle.dump(sub_data, my_file)
+    except TypeError:
         pickle.dump(data, my_file)
     my_file.close()
-
 
 COLOR_RED = Color(255, 0, 0)
 COLOR_GREEN = Color(0, 255, 0)

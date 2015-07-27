@@ -10,7 +10,7 @@ import cvxpy as cvx
 from StarCraftAIDevelopTool import *
 from StarCraftAIBasicTool import *
 
-def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
+def opt_wta_step_1(weapon_units, target_units, ai):
     start_time = time.time()
 
     ### Set parameter
@@ -22,7 +22,8 @@ def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
     ### Build information table
     damage_table, remain_damage_point = build_damage_table(target_units)
     hitpoints_table = build_hitpoints_table(target_units)
-    injury_table = build_injury_table(weapon_units, target_units, move_coef = move_coef)
+    maxhitpoints_table = [target_unit.type.maxHitPoints for target_unit in target_units]
+    injury_table = build_injury_table(weapon_units, target_units, move_coef = ai.MOVE_COEF)
     max_injury_table = build_max_injury_table(weapon_units, target_units, injury_table)
     move_cost_table, total_move_cost = build_move_cost_table(weapon_units, target_units)
     
@@ -53,8 +54,7 @@ def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
         tmp_cons = X[i, 0]
         for j in range(1, n):
             tmp_cons = tmp_cons + X[i, j]
-        tmp_cons = tmp_cons <= 1
-        cons.append(tmp_cons)
+        cons.append(tmp_cons <= 1)
     
     for j in range(n):
         tmp_cons = injury_table[0][j] * X[0, j]
@@ -67,7 +67,85 @@ def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
     prob = cvx.Problem(obj_func, cons)
     prob.solve()
 
-    ### Build result
+    wta_result_1 = []
+    zero_list = []
+    for i in range(n):
+        zero_list.append(0)
+    for i in range(m):
+        wta_result_1.append(list(zero_list))
+        for j in range(n):
+            if X[i, j].value > 0.1:
+                wta_result_1[i][j] = 1
+                break
+
+    #### Build result
+    #target_of_weapon = []
+    #for i in range(m):
+    #    target_of_weapon.append(None)
+    #    for j in range(n):
+    #        if X[i, j].value > 0.1:
+    #            target_of_weapon[i] = target_units[j]
+    #            break
+    #    if not target_of_weapon[i]:
+    #        target_of_weapon[i] = target_units[0]
+
+    ### dump data to readable file or pickle file
+    if ai.write_wta_1_count > 0:
+        #write_data_in_file(damage_table, 'damage_table.txt')
+        #write_data_in_file(hitpoints_table, 'hitpoints_table.txt')
+        #write_data_in_file(maxhitpoints_table, 'maxhitpoints_table.txt')
+        #write_data_in_file(injury_table, 'injury_table.txt')
+        #write_data_in_file(max_injury_table, 'max_injury_table.txt')
+        #write_data_in_file(wta_result_1, 'wta_result_1.txt')
+        ##
+        #write_data_in_pickle_file([damage_table, hitpoints_table, maxhitpoints_table, injury_table, max_injury_table], 'opt_data.pkl')
+        #write_data_in_pickle_file(damage_table, 'opt_data.pkl')
+        #write_data_in_pickle_file(hitpoints_table, 'opt_data.pkl')
+        #write_data_in_pickle_file(injury_table, 'opt_data.pkl')
+        #write_data_in_pickle_file(max_injury_table, 'opt_data.pkl')
+        ##
+        ai.write_wta_1_count -= 1
+
+    print("step 1 --- %s seconds ---" % (time.time() - start_time))
+    #game.printf("\x04 ---------------------------")
+    #game.printf("\x10 Minimize : " + str(prob.value))
+    #game.printf("\x1E R.D.P    : " + str(remain_damage_point))
+    return wta_result_1
+
+def opt_wta_step_2(weapon_units, target_units, ai, wta_result_1):
+    start_time = time.time()
+
+    type_assign_table, type_record_table = build_type_assign_table(weapon_units, target_units, wta_result_1)
+    distance_table = build_distance_table(weapon_units, target_units)
+    
+    m, n = len(weapon_units), len(target_units)
+    X = cvx.Bool(m, n)
+
+    obj_func = 0
+    for i in range(m):
+        for j in range(n):
+            obj_func += distance_table[i][j] * X[i, j]
+    obj_func = cvx.Minimize(obj_func)
+    
+    unit_types = type_assign_table.keys()
+    cons = []
+    for i in range(m):
+        tmp_cons = 0
+        for j in range(n):
+            tmp_cons = tmp_cons + X[i, j]
+        cons.append(tmp_cons <= 1)
+
+    for unit_type in unit_types:
+        units_index, target_assign_list = type_record_table[unit_type], type_assign_table[unit_type]
+        for j in range(n):
+            tmp_cons = 0
+            for index in units_index:
+                tmp_cons += X[index, j]
+            cons.append(tmp_cons == target_assign_list[j])
+
+    prob = cvx.Problem(obj_func, cons)
+    prob.solve()
+
     target_of_weapon = []
     for i in range(m):
         target_of_weapon.append(None)
@@ -77,10 +155,36 @@ def opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
                 break
         if not target_of_weapon[i]:
             target_of_weapon[i] = target_units[0]
-    print("--- %s seconds ---" % (time.time() - start_time))
-    #game.printf("\x04 ---------------------------")
-    #game.printf("\x10 Minimize : " + str(prob.value))
-    #game.printf("\x1E R.D.P    : " + str(remain_damage_point))
+
+    wta_result_2 = []
+    zero_list = []
+    for i in range(n):
+        zero_list.append(0)
+    for i in range(m):
+        wta_result_2.append(list(zero_list))
+        for j in range(n):
+            if X[i, j].value > 0.1:
+                wta_result_2[i][j] = 1
+                break
+
+    if ai.write_wta_2_count > 0:
+        #write_data_in_file(type_assign_table, 'type_assign_table.txt')
+        #write_data_in_file(type_record_table, 'type_record_table.txt')
+        #write_data_in_file(distance_table, 'distance_table.txt')
+        #write_data_in_file(wta_result_2, 'wta_result_2.txt')
+        ##
+        #tmp_type_assign_table = {}
+        #for key, value in type_assign_table.iteritems():
+        #    tmp_type_assign_table[str(key)] = list(value)
+        #tmp_type_record_table = {}
+        #for key, value in type_record_table.iteritems():
+        #    tmp_type_record_table[str(key)] = list(value)
+        #write_data_in_pickle_file([tmp_type_assign_table, tmp_type_record_table, distance_table], 'opt_wta_step_2_data.pkl')
+        ##
+        ai.write_wta_2_count -= 1
+
+    print("step 2 --- %s seconds ---" % (time.time() - start_time))
+
     return target_of_weapon
 
 def quick_wta(weapon_units, target_units, move_coef = 1, init_counter = 6):
@@ -194,6 +298,39 @@ def build_move_cost_table(weapon_units, target_units):
 
     return move_cost_table, total_move_cost
 
+def build_type_assign_table(weapon_units, target_units, wta_result_1):
+    m, n = len(weapon_units), len(target_units)
+    type_assign_table = {}
+    type_record_table = {}
+    zero_list = []
+    for i in range(n):
+        zero_list.append(0)
+
+    for i, weapon_unit in zip(range(m), weapon_units):
+        unit_type = weapon_unit.type
+        if not type_record_table.get(unit_type):
+            type_record_table[unit_type] = []
+        type_record_table[unit_type].append(i)
+        for j, target_unit in zip(range(n), target_units):
+            if wta_result_1[i][j] == 1:
+                if not type_assign_table.get(unit_type):
+                    type_assign_table[unit_type] = list(zero_list)
+                type_assign_table[unit_type][j] += 1
+                break
+    
+    return type_assign_table, type_record_table
+
+def build_distance_table(weapon_units, target_units):
+    m, n = len(weapon_units), len(target_units)
+    distance_table = []
+    for i in range(m):
+        tmp_distance_table = []
+        for j in range(n):
+            tmp_distance_table.append(weapon_units[i].getDistance(target_units[j]))
+        distance_table.append(tmp_distance_table)
+
+    return distance_table
+
 def move_range_of(unit, weapon_type = 'ground', move_coef = 1):
     unit_type = unit.type
     if weapon_type == 'ground':
@@ -232,3 +369,78 @@ def get_neighboring_enemys(game, my_unit_set, enemy_player, method = 'alpha'):
         return neighboring_enemys
     else:
         return []
+
+#######################################################################################################
+
+def old_opt_wta(weapon_units, target_units, move_coef = 1, game = None, ai = None):
+    start_time = time.time()
+
+    ### Set parameter
+    WASTE_DAMAGE_COEF = 1.2
+    REMAIN_DAMAGE_RATIO = 0.05
+    ### Remark
+    # Part 2: distence concept, in Build objective function, need more discuss ...
+
+    ### Build information table
+    damage_table, remain_damage_point = build_damage_table(target_units)
+    hitpoints_table = build_hitpoints_table(target_units)
+    injury_table = build_injury_table(weapon_units, target_units, move_coef = move_coef)
+    max_injury_table = build_max_injury_table(weapon_units, target_units, injury_table)
+    move_cost_table, total_move_cost = build_move_cost_table(weapon_units, target_units)
+    
+    m, n = len(weapon_units), len(target_units)
+    X = cvx.Bool(m, n)
+
+    ### Build objective function
+    # Part 1: damage concept
+    tmp_func = hitpoints_table[0] - injury_table[0][0] * X[0, 0]
+    for i in range(1, m):
+        tmp_func  = tmp_func - injury_table[i][0] * X[i, 0]
+    obj_func = damage_table[0] / (target_units[0].hitPoints * target_units[0].type.maxHitPoints) * tmp_func 
+    for j in range(1, n):
+        tmp_func = hitpoints_table[j] - injury_table[0][j] * X[0, j]
+        for i in range(1, m):
+            tmp_func  = tmp_func - injury_table[i][j] * X[i, j]
+        obj_func = obj_func + damage_table[j] / (target_units[j].hitPoints * target_units[j].type.maxHitPoints) * tmp_func
+    # Part 2: distence concept
+    #if total_move_cost > 0:
+    #    for i in range(1, m):
+    #        for j in range(1, n):
+    #            obj_func = obj_func + remain_damage_point * REMAIN_DAMAGE_RATIO * X[i, j] * (move_cost_table[i][j] / total_move_cost)**2
+    obj_func = cvx.Minimize(obj_func)
+    
+    ### Build constraints
+    cons = []
+    for i in range(m):
+        tmp_cons = X[i, 0]
+        for j in range(1, n):
+            tmp_cons = tmp_cons + X[i, j]
+        tmp_cons = tmp_cons <= 1
+        cons.append(tmp_cons)
+    
+    for j in range(n):
+        tmp_cons = injury_table[0][j] * X[0, j]
+        for i in range(1, m):
+            tmp_cons  = tmp_cons + injury_table[i][j] * X[i, j]
+        tmp_cons = tmp_cons <= hitpoints_table[j] + WASTE_DAMAGE_COEF * max_injury_table[j]
+        cons.append(tmp_cons)
+    
+    ### Start compute
+    prob = cvx.Problem(obj_func, cons)
+    prob.solve()
+
+    ### Build result
+    target_of_weapon = []
+    for i in range(m):
+        target_of_weapon.append(None)
+        for j in range(n):
+            if X[i, j].value > 0.1:
+                target_of_weapon[i] = target_units[j]
+                break
+        if not target_of_weapon[i]:
+            target_of_weapon[i] = target_units[0]
+    print("--- %s seconds ---" % (time.time() - start_time))
+    #game.printf("\x04 ---------------------------")
+    #game.printf("\x10 Minimize : " + str(prob.value))
+    #game.printf("\x1E R.D.P    : " + str(remain_damage_point))
+    return target_of_weapon
