@@ -119,7 +119,7 @@ class Battle(object):
             if frame_count % 2 == 0:
                 self.wta_weapon_units = my_army
                 self.wta_target_units = my_enemy
-                self.wta_result_1 = opt_wta_step_1(my_army, my_enemy, self)
+                self.wta_result_1 = opt_wta_step_1(my_army, my_enemy, self, tool = 'openopt')
             else:
                 self.opt_wta_target_of_weapon = opt_wta_step_2(self.wta_weapon_units, self.wta_target_units, self, self.wta_result_1)
             #target_list = quick_wta(my_army, my_enemy, move_coef = self.MOVE_COEF)

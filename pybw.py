@@ -310,7 +310,7 @@ try:
     #event_handler.listeners.append( KaisevenAI.zerg_FastBreakAI() )
     #event_handler.listeners.append( KaisevenAI.AlphaTestAI() )
     #event_handler.listeners.append( KaisevenAI.BetaTestAI() )
-    event_handler.listeners.append( FunctionTestAI.Battle() )
+    vent_handler.listeners.append( FunctionTestAI.Battle() )
     #event_handler.listeners.append( FunctionTestAI.OldBattle() )
     #event_handler.listeners.append( ErrorTestAI.Sample() )
     #event_handler.listeners.append( ErrorTestAI.GetNeighboringEnemys() )

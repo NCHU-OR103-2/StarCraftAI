@@ -7,12 +7,13 @@ import time
 
 import numpy as np
 import cvxpy as cvx
+from openopt import MILP
 from StarCraftAIDevelopTool import *
 from StarCraftAIBasicTool import *
 
-def opt_wta_step_1(weapon_units, target_units, ai):
+def opt_wta_step_1(weapon_units, target_units, ai, tool = 'cvxpy'):
     start_time = time.time()
-
+    
     ### Set parameter
     WASTE_DAMAGE_COEF = 1.2
     REMAIN_DAMAGE_RATIO = 0.05
@@ -28,66 +29,103 @@ def opt_wta_step_1(weapon_units, target_units, ai):
     move_cost_table, total_move_cost = build_move_cost_table(weapon_units, target_units)
     
     m, n = len(weapon_units), len(target_units)
-    X = cvx.Bool(m, n)
-
-    ### Build objective function
-    # Part 1: damage concept
-    tmp_func = hitpoints_table[0] - injury_table[0][0] * X[0, 0]
-    for i in range(1, m):
-        tmp_func  = tmp_func - injury_table[i][0] * X[i, 0]
-    obj_func = damage_table[0] / (target_units[0].hitPoints * target_units[0].type.maxHitPoints) * tmp_func 
-    for j in range(1, n):
-        tmp_func = hitpoints_table[j] - injury_table[0][j] * X[0, j]
-        for i in range(1, m):
-            tmp_func  = tmp_func - injury_table[i][j] * X[i, j]
-        obj_func = obj_func + damage_table[j] / (target_units[j].hitPoints * target_units[j].type.maxHitPoints) * tmp_func
-    # Part 2: distence concept
-    #if total_move_cost > 0:
-    #    for i in range(1, m):
-    #        for j in range(1, n):
-    #            obj_func = obj_func + remain_damage_point * REMAIN_DAMAGE_RATIO * X[i, j] * (move_cost_table[i][j] / total_move_cost)**2
-    obj_func = cvx.Minimize(obj_func)
     
-    ### Build constraints
-    cons = []
-    for i in range(m):
-        tmp_cons = X[i, 0]
+    if tool == 'cvxpy':
+        ###########################
+        # Use cvxpy to solve MILP #
+        ###########################
+        X = cvx.Bool(m, n)
+        #
+        ### Build objective function
+        # Part 1: damage concept
+        tmp_func = hitpoints_table[0] - injury_table[0][0] * X[0, 0]
+        for i in range(1, m):
+            tmp_func  = tmp_func - injury_table[i][0] * X[i, 0]
+        obj_func = damage_table[0] / (target_units[0].hitPoints * target_units[0].type.maxHitPoints) * tmp_func 
         for j in range(1, n):
-            tmp_cons = tmp_cons + X[i, j]
-        cons.append(tmp_cons <= 1)
-    
-    for j in range(n):
-        tmp_cons = injury_table[0][j] * X[0, j]
-        for i in range(1, m):
-            tmp_cons  = tmp_cons + injury_table[i][j] * X[i, j]
-        tmp_cons = tmp_cons <= hitpoints_table[j] + WASTE_DAMAGE_COEF * max_injury_table[j]
-        cons.append(tmp_cons)
-    
-    ### Start compute
-    prob = cvx.Problem(obj_func, cons)
-    prob.solve()
-
-    wta_result_1 = []
-    zero_list = []
-    for i in range(n):
-        zero_list.append(0)
-    for i in range(m):
-        wta_result_1.append(list(zero_list))
+            tmp_func = hitpoints_table[j] - injury_table[0][j] * X[0, j]
+            for i in range(1, m):
+                tmp_func  = tmp_func - injury_table[i][j] * X[i, j]
+            obj_func = obj_func + damage_table[j] / (target_units[j].hitPoints * target_units[j].type.maxHitPoints) * tmp_func
+        obj_func = cvx.Minimize(obj_func)
+        #
+        ### Build constraints
+        cons = []
+        for i in range(m):
+            tmp_cons = X[i, 0]
+            for j in range(1, n):
+                tmp_cons = tmp_cons + X[i, j]
+            cons.append(tmp_cons <= 1)
+        #
         for j in range(n):
-            if X[i, j].value > 0.1:
-                wta_result_1[i][j] = 1
-                break
-
-    #### Build result
-    #target_of_weapon = []
-    #for i in range(m):
-    #    target_of_weapon.append(None)
-    #    for j in range(n):
-    #        if X[i, j].value > 0.1:
-    #            target_of_weapon[i] = target_units[j]
-    #            break
-    #    if not target_of_weapon[i]:
-    #        target_of_weapon[i] = target_units[0]
+            tmp_cons = injury_table[0][j] * X[0, j]
+            for i in range(1, m):
+                tmp_cons  = tmp_cons + injury_table[i][j] * X[i, j]
+            tmp_cons = tmp_cons <= hitpoints_table[j] + WASTE_DAMAGE_COEF * max_injury_table[j]
+            cons.append(tmp_cons)
+        #
+        ### Start compute
+        prob = cvx.Problem(obj_func, cons)
+        prob.solve()
+        #
+        wta_result_1 = []
+        zero_list = []
+        for i in range(n):
+            zero_list.append(0)
+        for i in range(m):
+            wta_result_1.append(list(zero_list))
+            for j in range(n):
+                if X[i, j].value > 0.1:
+                    wta_result_1[i][j] = 1
+                    break
+        #
+        #### Build result: target_of_weapon
+        #target_of_weapon = []
+        #for i in range(m):
+        #    target_of_weapon.append(None)
+        #    for j in range(n):
+        #        if X[i, j].value > 0.1:
+        #            target_of_weapon[i] = target_units[j]
+        #            break
+        #    if not target_of_weapon[i]:
+        #        target_of_weapon[i] = target_units[0]
+    elif tool == 'openopt':
+        obj_func = []
+        var_map_table = []
+        for i in range(m):
+            for j in range(n):
+                if injury_table[i][j] != 0:
+                    obj_func.append(-damage_table[j] * injury_table[i][j] / hitpoints_table[j] / maxhitpoints_table[j])
+                    var_map_table.append((i, j))
+        var_amount = len(var_map_table)
+        #
+        intVars = range(var_amount)
+        #
+        A = np.zeros((n, var_amount))
+        Aeq = np.zeros((m, var_amount))
+        for var_num, index in zip(range(var_amount), var_map_table):
+            Aeq[index[0]][var_num] = 1
+            A[index[1]][var_num] = injury_table[index[0]][index[1]] / hitpoints_table[index[1]]
+        #
+        b = np.mat(hitpoints_table) + WASTE_DAMAGE_COEF * np.mat(max_injury_table)
+        beq = np.ones(m)
+        #
+        lb = np.zeros(var_amount)
+        ub = np.ones(var_amount)
+        #
+        p = MILP(f=obj_func, lb=lb, ub=ub, A=A, b=b, Aeq=Aeq, beq=beq, intVars=intVars, goal='min')
+        #r = p.solve('lpSolve')
+        r = p.solve('glpk', iprint =-1)
+        #r = p.solve('cplex')
+        wta_result_1 = []
+        zero_list = []
+        for i in xrange(n):
+            zero_list.append(0)
+        for i in xrange(m):
+            wta_result_1.append(list(zero_list))
+        for i in xrange(var_amount):
+            if r.xf[i] == 1:
+                wta_result_1[var_map_table[i][0]][var_map_table[i][1]] = 1
 
     ### dump data to readable file or pickle file
     if ai.write_wta_1_count > 0:
