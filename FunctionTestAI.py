@@ -139,7 +139,7 @@ class Battle(object):
                 self.opt_wta_target_of_weapon = opt_wta_step_2(self.wta_weapon_units, self.wta_target_units, self, self.wta_result_1)
             #target_list = quick_wta(my_army, my_enemy, move_coef = self.MOVE_COEF)
             if self.opt_wta_target_of_weapon:
-                start_attack(self.game, self.wta_weapon_units, self.opt_wta_target_of_weapon, my_army, my_enemy, draw_line_game = True, moving_fire = True)
+                start_attack(self.game, self.wta_weapon_units, self.opt_wta_target_of_weapon, my_army, my_enemy, draw_line_game = True, moving_fire = 'simple')
 
     def onUnitDestroy(self, unit):
         #self.game.printf('Unit destroy : ' + unit.type.name)

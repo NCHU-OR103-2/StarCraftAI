@@ -14,12 +14,12 @@ STRICT_RETREAT_HP_RATIO = 0.5
 STRICT_MOVING_FIRE_LEVEL = 32 * 1.5
 
 ##### Start Attack #####################################################################################################
-def start_attack(game, units, target_of_units, my_units, enemy_units, draw_line_game = False, moving_fire = False):
+def start_attack(game, units, target_of_units, my_units, enemy_units, draw_line_game = False, moving_fire = 'none'):
     ### Remark
     # bool strict_moving_fire need more discuss ...
     # the function is_near_cooldown() in StarCraftBasicTool.py need more discuss ...
 
-    if not moving_fire:
+    if moving_fire == 'none':
         for unit, target_unit in zip(units, target_of_units):
             if not target_unit or unit.isAttackFrame:
                 continue
@@ -31,7 +31,35 @@ def start_attack(game, units, target_of_units, my_units, enemy_units, draw_line_
                     unit.attack(target_unit)
                 elif unit.orderTarget != target_unit:
                     unit.attack(target_unit)
-    else:
+    
+    elif moving_fire == 'simple':
+        my_center = Position(*get_group_center_of(my_units))
+        enemy_center = Position(*get_group_center_of(enemy_units))
+        delta_x = my_center.x - enemy_center.x
+        delta_y = my_center.y - enemy_center.y
+        hypotenuse = math.sqrt(delta_x**2 + delta_y**2)
+        retreat_position = Position(int(32 * delta_x / hypotenuse), int(32 * delta_y / hypotenuse))
+        for unit, target_unit in zip(units, target_of_units):
+            if not target_unit or unit.isAttackFrame:
+                continue
+            weapon_type = "air" if target_unit.type.isFlyer else "ground"
+            unit_weapon_range = unit.type.airWeapon.maxRange if target_unit.type.isFlyer else unit.type.groundWeapon.maxRange
+            if not is_near_cooldown(unit, weapon_type):
+                if unit.getDistance(target_unit) < unit_weapon_range + 8:
+                    unit.move(Position(unit.position.x + retreat_position.x, unit.position.y + retreat_position.y))
+                else:
+                    continue
+            else:
+                if unit.target:
+                    if unit.target != target_unit:
+                        unit.attack(target_unit)
+                else:
+                    if not unit.orderTarget:
+                        unit.attack(target_unit)
+                    elif unit.orderTarget != target_unit:
+                        unit.attack(target_unit)
+
+    elif moving_fire == 'complex':
         under_aim_table = build_under_aim_table(units, enemy_units)
         my_center = Position(*get_group_center_of(my_units))
         enemy_center = Position(*get_group_center_of(enemy_units))
