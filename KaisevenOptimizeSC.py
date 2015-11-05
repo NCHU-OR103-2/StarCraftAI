@@ -1,5 +1,6 @@
 from __future__ import division
 
+import sys
 from pybw_swig import * # import all constants and classes
 import pybw
 import math
@@ -13,7 +14,7 @@ from StarCraftAIBasicTool import *
 
 def opt_wta_step_1(weapon_units, target_units, ai, tool = 'cvxpy'):
     start_time = time.time()
-    
+
     ### Set parameter
     WASTE_DAMAGE_COEF = 1.2
     REMAIN_DAMAGE_RATIO = 0.05
@@ -31,9 +32,66 @@ def opt_wta_step_1(weapon_units, target_units, ai, tool = 'cvxpy'):
     m, n = len(weapon_units), len(target_units)
     
     if tool == 'cvxpy':
-        ###########################
-        # Use cvxpy to solve MILP #
-        ###########################
+        obj_func_coef_table = []
+        var_map_table = []
+        for i in range(m):
+            for j in range(n):
+                if injury_table[i][j] != 0:
+                    obj_func_coef_table.append(-damage_table[j] * injury_table[i][j] / hitpoints_table[j] / maxhitpoints_table[j])
+                    var_map_table.append((i, j))
+        var_amount = len(var_map_table)
+
+        X = cvx.Bool(var_amount)
+        #
+        ### Build objective function
+        # Part 1: damage concept
+        obj_func = 0
+        for i in xrange(var_amount):
+            obj_func  = obj_func + obj_func_coef_table[i] * X[i]
+        obj_func = cvx.Minimize(obj_func)
+        #
+        ### Build constraints
+        cons_weapon_count = []
+        for i in xrange(m):
+            cons_weapon_count.append(0)
+        cons_waste_damage = []
+        for j in xrange(n):
+            cons_waste_damage.append(0)
+        for var_num, index in zip(range(var_amount), var_map_table):
+            cons_weapon_count[index[0]] += X[var_num]
+            cons_waste_damage[index[1]] += injury_table[index[0]][index[1]] * X[var_num]
+        #
+        cons = []
+        for i in xrange(m):
+            cons.append(cons_weapon_count[i] == 1)
+        for j in xrange(n):
+            cons.append(cons_waste_damage[j] <= hitpoints_table[j] + WASTE_DAMAGE_COEF * max_injury_table[j])
+        #
+        ### Start compute
+        prob = cvx.Problem(obj_func, cons)
+        prob.solve()
+        #
+        wta_result_1 = []
+        zero_list = []
+        for j in xrange(n):
+            zero_list.append(0)
+        for i in xrange(m):
+            wta_result_1.append(list(zero_list))
+        for i in xrange(var_amount):
+            if X[i].value > 0.1:
+                wta_result_1[var_map_table[i][0]][var_map_table[i][1]] = 1
+        #
+        #### Build result: target_of_weapon
+        #target_of_weapon = []
+        #for i in range(m):
+        #    target_of_weapon.append(None)
+        #    for j in range(n):
+        #        if X[i, j].value > 0.1:
+        #            target_of_weapon[i] = target_units[j]
+        #            break
+        #    if not target_of_weapon[i]:
+        #        target_of_weapon[i] = target_units[0]
+    elif tool == 'cvxpy_old':
         X = cvx.Bool(m, n)
         #
         ### Build objective function
@@ -90,6 +148,7 @@ def opt_wta_step_1(weapon_units, target_units, ai, tool = 'cvxpy'):
         #    if not target_of_weapon[i]:
         #        target_of_weapon[i] = target_units[0]
     elif tool == 'openopt':
+        #from openopt import MILP
         obj_func = []
         var_map_table = []
         for i in range(m):
@@ -105,7 +164,7 @@ def opt_wta_step_1(weapon_units, target_units, ai, tool = 'cvxpy'):
         Aeq = np.zeros((m, var_amount))
         for var_num, index in zip(range(var_amount), var_map_table):
             Aeq[index[0]][var_num] = 1
-            A[index[1]][var_num] = injury_table[index[0]][index[1]] / hitpoints_table[index[1]]
+            A[index[1]][var_num] = injury_table[index[0]][index[1]]
         #
         b = np.mat(hitpoints_table) + WASTE_DAMAGE_COEF * np.mat(max_injury_table)
         beq = np.ones(m)
@@ -127,6 +186,8 @@ def opt_wta_step_1(weapon_units, target_units, ai, tool = 'cvxpy'):
             if r.xf[i] == 1:
                 wta_result_1[var_map_table[i][0]][var_map_table[i][1]] = 1
 
+        #ai.game.printf("step 1 --- %s seconds ---" % (time.time() - start_time))
+
     ### dump data to readable file or pickle file
     if ai.write_wta_1_count > 0:
         #write_data_in_file(damage_table, 'damage_table.txt')
@@ -144,7 +205,7 @@ def opt_wta_step_1(weapon_units, target_units, ai, tool = 'cvxpy'):
         ##
         ai.write_wta_1_count -= 1
 
-    print("step 1 --- %s seconds ---" % (time.time() - start_time))
+    #print("step 1 --- %s seconds ---" % (time.time() - start_time))
     #game.printf("\x04 ---------------------------")
     #game.printf("\x10 Minimize : " + str(prob.value))
     #game.printf("\x1E R.D.P    : " + str(remain_damage_point))
@@ -221,7 +282,7 @@ def opt_wta_step_2(weapon_units, target_units, ai, wta_result_1):
         ##
         ai.write_wta_2_count -= 1
 
-    print("step 2 --- %s seconds ---" % (time.time() - start_time))
+    #print("step 2 --- %s seconds ---" % (time.time() - start_time))
 
     return target_of_weapon
 

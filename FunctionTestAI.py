@@ -30,14 +30,29 @@ class Sample(object):
         #self.game.printf(str(frame_count))
         self.su = list(self.game.selectedUnits)
 
-        if len(self.su) > 0:
-            self.tsu = self.su[0]
-            if self.tsu.isUnderAttack:
-                draw_circle_on(self.game, self.tsu, radius = 14, color = COLOR_RED)
-            if self.tsu.isIdle:
-                draw_circle_on(self.game, self.tsu, radius = 10, color = COLOR_GREEN)
-            elif self.tsu.isMoving:
-                draw_circle_on(self.game, self.tsu, radius = 10, color = COLOR_BLUE)
+        #if len(self.su) > 0:
+        #    self.tsu = self.su[0]
+        #    if self.tsu.isUnderAttack:
+        #        draw_circle_on(self.game, self.tsu, radius = 14, color = COLOR_RED)
+        #    if self.tsu.isIdle:
+        #        draw_circle_on(self.game, self.tsu, radius = 10, color = COLOR_GREEN)
+        #    elif self.tsu.isMoving:
+        #        draw_circle_on(self.game, self.tsu, radius = 10, color = COLOR_BLUE)
+
+        my_army = []
+        for key in self.me.units_dictionary.keys():
+            if key in self.me.unittype_set_army:
+                my_army += list(self.me.units_dictionary[key])
+        self.my_army = my_army
+        my_enemy = list(self.me.visible_enemy_units)
+
+        if len(my_army) > 0:
+            for u in my_army:
+                draw_circle_on(self.game, u, radius = u.type.groundWeapon.maxRange, color = COLOR_RED)
+                draw_range_circle_on(self.game, u, move_coef = 1)
+                #draw_circle_on(self.game, u, radius = int(fire_range_of(u)), color = COLOR_YELLOW)
+            #self.game.drawCircleMap(x, y, 5, COLOR_CYAN)
+            #self.game.drawCircleMap(x, y, 6, COLOR_CYAN)
 
     def onUnitDestroy(self, unit):
         #self.game.printf('Unit destroy : ' + unit.type.name)

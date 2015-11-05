@@ -44,14 +44,14 @@ def start_attack(game, units, target_of_units, my_units, enemy_units, draw_line_
             if not target_unit:
                 continue
             if unit.isAttackFrame:
-                draw_text_on(game, unit, "\x08 -- attacking --")
+                #draw_text_on(game, unit, "\x08 -- attacking --")
                 continue
             residue_hp_ratio = unit.hitPoints / unit.type.maxHitPoints
             strict_moving_fire = True if weapon_range_diff(unit, target_unit) >= STRICT_MOVING_FIRE_LEVEL else False
 
             # Case Escape ------------------------------------
             if not unit.orderTarget:
-                draw_text_on(game, unit, "\x11 -- escape --")
+                #draw_text_on(game, unit, "\x11 -- escape --")
                 # neardeath
                 if residue_hp_ratio <= STRICT_RETREAT_HP_RATIO:
                     moving_fire_case_escape_neardeath(unit, target_unit, my_units, enemy_units, under_aim_table, strict_moving_fire, retreat_position)
@@ -63,7 +63,7 @@ def start_attack(game, units, target_of_units, my_units, enemy_units, draw_line_
                     moving_fire_case_escape_energetic(unit, target_unit, my_units, enemy_units, under_aim_table, strict_moving_fire, retreat_position)       
             # Case Assault -----------------------------------
             elif unit.isMoving:
-                draw_text_on(game, unit, "\x17 -- assault --")
+                #draw_text_on(game, unit, "\x17 -- assault --")
                 # neardeath
                 if residue_hp_ratio <= STRICT_RETREAT_HP_RATIO:
                     moving_fire_case_assault_neardeath(unit, target_unit, my_units, enemy_units, under_aim_table, strict_moving_fire, retreat_position)
@@ -75,7 +75,7 @@ def start_attack(game, units, target_of_units, my_units, enemy_units, draw_line_
                     moving_fire_case_assault_energetic(unit, target_unit, my_units, enemy_units, under_aim_table, strict_moving_fire, retreat_position)
             # Case Attack ------------------------------------
             elif unit.isInWeaponRange(target_unit):
-                draw_text_on(game, unit, "\x06 -- attack --")
+                #draw_text_on(game, unit, "\x06 -- attack --")
                 # neardeath
                 if residue_hp_ratio <= STRICT_RETREAT_HP_RATIO:
                     moving_fire_case_attack_neardeath(unit, target_unit, my_units, enemy_units, under_aim_table, strict_moving_fire, retreat_position)
@@ -87,7 +87,7 @@ def start_attack(game, units, target_of_units, my_units, enemy_units, draw_line_
                     moving_fire_case_attack_energetic(unit, target_unit, my_units, enemy_units, under_aim_table, strict_moving_fire, retreat_position)
             # Case Unknow ------------------------------------
             else:
-                draw_text_on(game, unit, "\x07 -- unknow --")
+                #draw_text_on(game, unit, "\x07 -- unknow --")
                 if not unit.orderTarget:
                     unit.attack(target_unit)
                     continue

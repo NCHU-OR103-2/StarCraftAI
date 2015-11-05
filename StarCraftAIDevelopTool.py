@@ -21,7 +21,7 @@ def draw_range_circle_on(game, unit, weapon_type = 'ground', move_coef = 0):
     game.drawCircleMap(x, y, weapon.maxRange, COLOR_RED)
     if move_coef > 0:
         fire_range = weapon.maxRange + move_coef * weapon.damageCooldown * unit.type.topSpeed
-        game.drawCircleMap(x, y, int(math.ceil(fire_range)), COLOR_DEEP_PINK) 
+        game.drawCircleMap(x, y, int(math.ceil(fire_range)), COLOR_YELLOW) 
 
 def draw_line_between(game, unit_1, unit_2, color = Color(0, 0, 0)):
     if not unit_1 or not unit_2:
