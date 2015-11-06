@@ -85,6 +85,7 @@ Main Modules 下會制定各種 AI 的 class。
 
 Mathematical Model
 -------------------
+[專題介紹：數學規劃與遊戲人工智慧之最佳化應用](https://drive.google.com/file/d/0B9aRT-5Ab_b-cGdxQnV4MndiOVU/view "Project View")
 
 Modules
 -------
