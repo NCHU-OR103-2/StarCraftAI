@@ -17,7 +17,11 @@
 
 Intro
 -----
-此 Project 目標為設計一個 StarCraft 的 AI，依據遊戲中不同的狀況，建立數學模型與演算法，盡可能的最佳化遊戲。
+此 Project 目標為設計一個 StarCraft 的 AI，依據遊戲中不同的狀況，建立數學模型與演算法來最佳化遊戲結果。
+在 DemoVideo 目錄中，放置了 AI 運行的影片。
+
+![img_DemoVideo_NoneAI01](http://imgur.com/ZLRHnsG)
+[link DemoVideo_NoneAI01](https://www.youtube.com/watch?v=8b8EMxdssdw&feature=youtu.be "StarCraft_AI_Demo_01_None_AI_Suport")
 
 Usage
 -----
@@ -64,7 +68,7 @@ Main Modules 下會制定各種 AI 的 class。
 - StarCraftAIBasicTool
 - StarCraftAIDevelopTool
 
-Mathematical Module
+Mathematical Model
 -------------------
 
 Modules
