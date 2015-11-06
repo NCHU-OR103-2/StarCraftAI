@@ -3,10 +3,10 @@
 
 - [Intro](#intro)
 - [Demo](#demo)
+- [Mathematical Model](#mathematical-model)
 - [Usage](#usage)
     - [Main Modules](#main-modules)
     - [Sub Modules](#sub-modules)
-- [Mathematical Model](#mathematical-model)
 - [Modules](#modules)
     - [KaisevenAI](#kaisevenai)
     - [FunctionTestAI](#functiontestai)
@@ -37,6 +37,10 @@ Demo
 
 有 AI Support 之下的 Battle
 [![img_DemoVideo_AI02](http://i.imgur.com/KSrM6JA.jpg)](https://www.youtube.com/watch?v=uta1Sczek5E&feature=youtu.be "StarCraft_AI_Demo_02_AI_Suport")
+
+Mathematical Model
+-------------------
+[專題介紹：數學規劃與遊戲人工智慧之最佳化應用](https://drive.google.com/file/d/0B9aRT-5Ab_b-cGdxQnV4MndiOVU/view "Project View")
 
 Usage
 -----
@@ -82,10 +86,6 @@ Main Modules 下會制定各種 AI 的 class。
 - KaisevenControlSC
 - StarCraftAIBasicTool
 - StarCraftAIDevelopTool
-
-Mathematical Model
--------------------
-[專題介紹：數學規劃與遊戲人工智慧之最佳化應用](https://drive.google.com/file/d/0B9aRT-5Ab_b-cGdxQnV4MndiOVU/view "Project View")
 
 Modules
 -------
