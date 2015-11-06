@@ -5,6 +5,7 @@
 - [Usage](#usage)
     - [Main Modules](#main-modules)
     - [Sub Modules](#sub-modules)
+- [Mathematical Model](#mathematical-model)
 - [Modules](#modules)
     - [KaisevenAI](#kaisevenai)
     - [FunctionTestAI](#functiontestai)
@@ -62,6 +63,9 @@ Main Modules 下會制定各種 AI 的 class。
 - KaisevenControlSC
 - StarCraftAIBasicTool
 - StarCraftAIDevelopTool
+
+Mathematical Module
+-------------------
 
 Modules
 -------
