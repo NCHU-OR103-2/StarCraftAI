@@ -18,9 +18,22 @@
 Intro
 -----
 此 Project 目標為設計一個 StarCraft 的 AI，依據遊戲中不同的狀況，建立數學模型與演算法來最佳化遊戲結果。
-在 DemoVideo 目錄中，放置了 AI 運行的影片。
+在 DemoVideo 目錄中，放置了 AI 運行的影片。  
 
+#### Demo  
+##### Sample 1
+沒有 AI Support 之下的 Battle  
 [![img_DemoVideo_NoneAI01](http://i.imgur.com/ZLRHnsG.jpg)](https://www.youtube.com/watch?v=8b8EMxdssdw&feature=youtu.be "StarCraft_AI_Demo_01_None_AI_Suport")
+
+有 AI Support 之下的 Battle
+[![img_DemoVideo_AI01](http://i.imgur.com/1aEaNIJ.jpg)](https://www.youtube.com/watch?v=rHyXD_33gp0&feature=youtu.be "StarCraft_AI_Demo_01_AI_Suport")
+
+##### Sample 2 2 
+沒有 AI Support 之下的 Battle  
+[![img_DemoVideo_NoneAI02](http://i.imgur.com/qj0FBLf.jpg)](https://www.youtube.com/watch?v=lTdkjR-rCoE&feature=youtu.be "StarCraft_AI_Demo_022_None_AI_Suport")
+
+有 AI Support 之下的 Battle
+[![img_DemoVideo_AI02](http://i.imgur.com/KSrM6JA.jpg)](https://www.youtube.com/watch?v=uta1Sczek5E&feature=youtu.be "StarCraft_AI_Demo_02_AI_Suport")
 
 Usage
 -----
